@@ -1,0 +1,38 @@
+{
+  "name": "zuix-web-starter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Starter project for component oriented web development with zuixjs and Eleventy.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx @11ty/eleventy --incremental --serve",
+    "build": "npx @11ty/eleventy"
+  },
+  "keywords": [
+    "zuix",
+    "zuixjs",
+    "web-starter",
+    "component oriented web",
+    "static-site",
+    "template",
+    "node",
+    "eleventy",
+    "javascript"
+  ],
+  "author": "G-Labs",
+  "license": "MIT",
+  "homepage": "https://github.com/zuixjs",
+  "repository": "https://github.com/zuixjs/zuix-web-starter",
+  "devDependencies": {
+    "@11ty/eleventy": "^1.0.0-canary.44",
+    "config": "^1.31.0",
+    "eslint": "^8.1.0",
+    "eslint-config-google": "^0.14.0",
+    "less": "^3.9.0",
+    "mkdirp": "^1.0.4",
+    "ncp": "^2.0.0",
+    "terser": "^5.9.0",
+    "zuix-cli": "file:../zuix-cli",
+    "zuix-dist": "^1.0.8"
+  }
+}

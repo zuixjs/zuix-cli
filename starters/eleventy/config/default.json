@@ -1,0 +1,59 @@
+{
+  "zuix": {
+    "build": {
+      "input": "./source",
+      "output": "./build",
+      "copy": [
+        "app",
+        "css",
+        "images",
+        "js",
+        ".nojekyll",
+        "browserconfig.xml",
+        "manifest.json",
+        "humans.txt",
+        "favicon.ico",
+        "robots.txt"
+      ],
+      "includesFolder": "_inc",
+      "bundle": {
+        "js": true,
+        "css": true,
+        "zuix": true
+      },
+      "minify": {
+        "disable": false,
+        "collapseWhitespace": true,
+        "removeOptionalTags": true,
+        "removeRedundantAttributes": true,
+        "removeScriptTypeAttributes": true,
+        "removeTagWhitespace": false,
+        "useShortDoctype": false,
+        "collapseBooleanAttributes": true,
+        "removeAttributeQuotes": false,
+        "removeEmptyAttributes": true,
+        "minifyCSS": true,
+        "minifyJS": true
+      }
+    },
+    "app": {
+      "title": "zUIx Web Starter application.",
+      "googleSiteId": "UA-123-456",
+      "baseUrl": "/",
+      "resourcePath": "/app/",
+      "libraryPath": {
+        "@lib": "https://zuixjs.github.io/zkit/lib/",
+        "@hgui": "https://genielabs.github.io/homegenie-web-ui/app/",
+        "@cdnjs": "https://cdnjs.cloudflare.com/ajax/libs/"
+      },
+      "zuixjs.github.io": {
+        "resourcePath": "/zuix-web-starter/app",
+        "libraryPath": {
+          "@lib": "https://zuixjs.github.io/zkit/lib/",
+          "@hgui": "https://genielabs.github.io/homegenie-web-ui/app/",
+          "@cdnjs": "https://cdnjs.cloudflare.com/ajax/libs/"
+        }
+      }
+    }
+  }
+}

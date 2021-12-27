@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="{{head.description}}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{head.title}}</title>
+
+    <!-- Disable tap highlight on IE -->
+    <meta name="msapplication-tap-highlight" content="no">
+
+
+    <!-- Progressive Web App -->
+    <meta name="theme-color" content="white">
+    <link rel="manifest" href="{{ '/manifest.json' | url }}">
+
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" sizes="192x192" href="{{ '/images/icons/desktop/android-chrome-192x192.png' | url }}">
+    <link rel="icon" sizes="512x512" href="{{ '/images/icons/desktop/android-chrome-512x512.png' | url }}">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="A zUIx website">
+    <link rel="apple-touch-icon-precomposed" href="{{ '/images/icons/desktop/apple-touch-icon.png' | url }}">
+    <link rel="mask-icon" href="{{ '/images/icons/desktop/safari-pinned-tab.svg' | url }}" color="#5bbad5">
+
+    <!-- Tile color for Windows -->
+    <meta name="msapplication-TileImage" content="{{ '/images/icons/desktop/mstile-150x150.png' | url }}">
+    <meta name="msapplication-TileColor" content="#ffc40d">
+
+    <!-- Place favicon.ico in the root directory -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ '/images/icons/desktop/favicon-32x32.png' | url }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ '/images/icons/desktop/favicon-16x16.png' | url }}">
+
+    <!-- SEO: If your mobile URL is different from the desktop URL, add a canonical link to the desktop page https://developers.google.com/webmasters/smartphone-sites/feature-phones -->
+    <!--
+    <link rel="canonical" href="https://www.example.com/">
+    -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flex-layout-attribute/1.0.3/css/flex-layout-attribute.min.css" integrity="sha512-yEBpXzOdYZzWorNkyZm0Z+w4uP1+ck0nTDCQb/Vq5mYNfljybDFcRwuBYoFOenBcRQvLBGqd40dbktMxIhDUug==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- zuix https://github.com/zuixjs/zuix -->
+    <script src="{{ '/js/zuix/zuix.min.js' | url }}"></script>
+    <script src="{{ '/config.js' | url }}"></script>

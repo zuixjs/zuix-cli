@@ -1,0 +1,109 @@
+// destination type must match source (dir/dir or file/file)
+const fs = require("fs");
+const path = require("path");
+const mkdirp = require("mkdirp");
+const ncp = require('ncp').ncp;
+const chalk = require('chalk');
+const options = require('./default-config');
+const workBox = require('workbox-build');
+
+function copyFolder(source, destination, done) {
+    // ncp.limit = 16;
+    // ncp.stopOnErr = true;
+    let folder = destination;
+    if (fs.existsSync(source)) {
+        if (fs.lstatSync(source).isFile()) {
+            folder = path.dirname(destination);
+        }
+        if (!fs.existsSync(folder)) {
+            mkdirp.sync(folder);
+            console.debug('- %s "%s"', chalk.blue.bold('created folder'), folder);
+        }
+    } else {
+        console.warn(chalk.white.bold('Source folder not found.'));
+        // TODO: handle return value
+        return false;
+    }
+    ncp(path.resolve(process.cwd(), source), path.resolve(process.cwd(), destination), function(err) {
+        if (typeof done === 'function') {
+            done(err);
+        }
+    });
+    return true;
+}
+
+function generateAppConfig(opts) {
+    const config = Object.assign(options, opts);
+    let cfg = `/* eslint-disable quotes */
+(function() {
+  zuix.store('config', `;
+  cfg += JSON.stringify(config.app, null, 2).replaceAll('\n', '\n  ');
+  cfg += ');\n';
+  // WorkBox / Service Worker
+  // TODO: fix service-worker path
+  cfg += `  // Check that service workers are registered
+  const app = zuix.store('config');
+  if ('serviceWorker' in navigator) {
+    // Use the window load event to keep the page load performant
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(app.baseUrl + 'service-worker.js');
+    });
+  }
+})();\n`;
+    fs.writeFileSync(config.build.output+'/config.js', cfg);
+}
+
+function generateServiceWorker(opts) {
+    const config = Object.assign(options, opts);
+    // This will return a Promise
+    return workBox.generateSW({
+
+        globDirectory: config.build.output,
+        globPatterns: [
+            '**\/*.{html,json,js,css}',
+            '**\/*.{png,jpg,jpeg,svg,gif}'
+        ],
+
+        swDest: path.join(config.build.output, 'service-worker.js'),
+
+        // Define runtime caching rules.
+        runtimeCaching: [{
+            // Match any request ends with .png, .jpg, .jpeg or .svg.
+            urlPattern: /\.(?:png|jpg|jpeg|svg)$/,
+
+            // Apply a cache-first strategy.
+            handler: 'CacheFirst',
+
+            options: {
+                // Use a custom cache name.
+                cacheName: 'images',
+                // Cache up to 50 images.
+                expiration: {
+                    maxEntries: 50,
+                }
+            }
+        },{
+            // Match any request ends with .html, .json, .js or .css.
+            urlPattern: /\.(?:html|json|js|css)$/,
+
+            // Apply a cache-first strategy.
+            handler: 'CacheFirst',
+
+            options: {
+                // Use a custom cache name.
+                cacheName: 'default',
+                // Cache up to 50 items.
+                expiration: {
+                    maxEntries: 50,
+                }
+            }
+        }]
+
+    });
+}
+
+module.exports = {
+    copyFolder: copyFolder,
+    generateAppConfig: generateAppConfig,
+    generateServiceWorker: generateServiceWorker
+};
