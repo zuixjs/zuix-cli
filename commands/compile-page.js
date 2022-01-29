@@ -154,8 +154,8 @@ function createBundle(content, fileName) {
             resourcePath = el.getAttribute('z-load');
           }
         }
-        // do not process inline views
-        if (dom.window.document.querySelectorAll('[data-ui-view="' + resourcePath + '"]').length > 0 ||
+        // do not process inline views or "default" component
+        if (resourcePath === 'default' || dom.window.document.querySelectorAll('[data-ui-view="' + resourcePath + '"]').length > 0 ||
             dom.window.document.querySelectorAll('[z-view="' + resourcePath + '"]').length > 0) {
           return;
         }
@@ -267,33 +267,44 @@ function isUrl(path) {
   return path.indexOf('://') > 0 || path.startsWith('//');
 }
 
-function fetchResource(path, reportError) {
+function fetchResource(resourcePath, reportError) {
   let content = null;
   const error = '   ^#^R^W[%s]^:';
-  if (isUrl(path)) {
-    if (path.startsWith('//')) {
-      path = 'https:' + path;
+  if (isUrl(resourcePath)) {
+    if (resourcePath.startsWith('//')) {
+      resourcePath = 'https:' + resourcePath;
     }
-    tlog.overwrite('   ^C%s^: downloading "%s"', tlog.busyCursor(), path);
-    const res = request('GET', path);
-    if (res.statusCode === 200) {
-      content = res.getBody('utf8');
+    const parsedUrl = url.parse(resourcePath);
+    let cachePath = path.join('.zuix', 'cache', parsedUrl.hostname, parsedUrl.path);
+    if (fs.existsSync(cachePath)) {
+      tlog.overwrite('   ^C%s^: cached "%s"', tlog.busyCursor(), resourcePath);
+      content = fs.readFileSync(cachePath).toString('utf8');
       tlog.overwrite('');
-    } else if (reportError) {
-      hasErrors = true;
-      tlog.term.previousLine();
-      tlog.error(error + ' %s', res.statusCode, path).br();
+    } else {
+      tlog.overwrite('   ^C%s^: downloading "%s"', tlog.busyCursor(), resourcePath);
+      const res = request('GET', resourcePath);
+      if (res.statusCode === 200) {
+        content = res.getBody('utf8');
+        // cache the downloaded file
+        mkdirp.sync(path.dirname(cachePath));
+        fs.writeFileSync(cachePath, content, { encoding: 'utf8'});
+        tlog.overwrite('');
+      } else if (reportError) {
+        hasErrors = true;
+        tlog.term.previousLine();
+        tlog.error(error + ' %s', res.statusCode, resourcePath).br();
+      }
     }
   } else {
-    tlog.overwrite('   ^C%s^: reading "%s"', tlog.busyCursor(), path);
+    tlog.overwrite('   ^C%s^: reading "%s"', tlog.busyCursor(), resourcePath);
     try {
-      content = fs.readFileSync(path).toString();
+      content = fs.readFileSync(resourcePath).toString();
       tlog.overwrite('');
     } catch (e) {
       if (reportError) {
         hasErrors = true;
         tlog.term.previousLine();
-        tlog.error(error + ' > "%s"', e.code, path).br();
+        tlog.error(error + ' > "%s"', e.code, resourcePath).br();
       }
     }
   }
@@ -368,7 +379,7 @@ function generateApp(content, fileName) {
       // add style to hide inline views
       // add inline views
       if (bundleViews.length > 0) {
-        const head = dom.window.document.querySelector('head');
+//        const head = dom.window.document.querySelector('head');
 //        head.innerHTML += '    <style>[z-view]:not([z-include]):not([z-load]) { display: none; }</style>\n';
         dom.window.document.body.innerHTML += '<!-- zUIx.js inline resources bundle -->'
             + bundleViews;

@@ -1,0 +1,124 @@
+---
+date: Last Modified
+---
+{% include "head_open.html" %}
+<style>
+{% include "layouts/side_drawer/style.css" %}
+</style>
+
+{% include "head_close.html" %}
+
+<!-- scroll helper is used to show/hide the header when scrolling -->
+<body ctrl z-load="controllers/scroll_helper" z-lazy="scroll"
+      z-context="scroll-helper"
+      z-options="scroll_opts"
+      layout="column stretch-stretch">
+
+    <header #header layout="row center-start" class="mdl-shadow--2dp">
+        <div self="stretch" layout="row center-start">
+            <div>
+                <img src="{{ '/images/icons/icon-192x192.png' | url }}"
+                     width="56" height="56" alt="zUIx.js logo" title="zuix.js"
+                     class="header-logo animate__animated animate__bounceIn"
+                     onclick="menuDrawer.open()">
+            </div>
+            <div self="size-x1" layout="row center-center">
+                <h1 class="mdl-color-text--primary" style="margin-left: -56px">{{ title }}</h1>
+            </div>
+        </div>
+    </header>
+
+    <!--
+    <div z-load="@lib/components/hamburger_icon"
+         z-context="menu_hamburger"
+         z-options="menuButtonOptions"
+         style="position:fixed;right:0;top:6px;z-index:1001"></div>
+         -->
+
+    <main class="animate__animated animate__fadeIn animate__faster">
+        <div layout="column top-center">
+
+            <h1 #alt_header class="mdl-color-text--primary">{{ title }}</h1>
+            <div class="content">
+                {{ content | safe }}
+            </div>
+
+            {% include "page_navigation.html" %}
+
+            {% if pubDate %}
+            <p>Published on: {{ pubDate | dateFormat }}</p>
+            {% endif %}
+
+        </div>
+    </main>
+
+    <!-- Navigation Drawer -->
+    <div ctrl z-load="controllers/drawer_layout"
+         z-context="menu-drawer"
+         z-options="drawer_opts"
+         class="drawer-layout no-select visible-on-ready"
+         layout="column top-stretch">
+        <!-- Navigation Drawer content -->
+
+        <!-- Header -->
+        <div class="drawer-header" layout="column justify-stretch">
+            <div self="stretch" layout="row center-justify">
+                <img class="logo animate__animated animate__swing animate__fast"
+                     src="{{ '/images/icons/icon-192x192.png' | url }}" alt="Logo" title="zuix.js">
+                <div class="text-logo">zuix.js</div>
+                <a href="https://github.com/zuixjs" style="margin: 8px 8px 4px 20px;opacity: 0.75">
+                    <img src="{{ '/images/github-mark-light.png' | url }}" alt="GitHub logo"
+                         title="zuix.js on GitHub" width="32" height="32">
+                </a>
+            </div>
+            <div style="padding-left: 6px;padding-right: 6px;">
+                JavaScript library for component-based websites and applications.
+            </div>
+        </div>
+
+        <!-- Menu items and other content -->
+        <div class="drawer-content" self="size-x1">
+            {% include "layouts/side_drawer/menu.html" %}
+        </div>
+
+    </div>
+
+    <div z-load="components/context_menu"
+         z-context="my-menu" z-lazy="false">
+        <div #menu class="hidden">
+            <!-- menu items list -->
+            <button>Option 1</button>
+            <button>Option 2</button>
+            <button>Option 3</button>
+        </div>
+    </div>
+
+    <!--TODO: { - % include "footer.html" % - } -->
+    <footer>
+
+        <div layout="rows top-justify">
+            <div class="margin-16px">
+                see <a href="https://github.com/zuixjs/zuix/blob/master/LICENSE.TXT">code</a>
+                and <a href="https://creativecommons.org/licenses/by/4.0/">documentation</a>
+                licenses
+            </div>
+            <div class="margin-16px">
+                <a href="https://github.com/zuixjs">zuix.js</a>
+            </div>
+            <div class="margin-16px">
+                &copy; 2016-to-infinity-and-beyond
+                by <a href="https://glabs.it">g-labs</a>
+            </div>
+        </div>
+
+    </footer>
+
+    {% include "body_end.html" %}
+
+    <!-- Common JS scripts -->
+    <script>
+    {% include "layouts/side_drawer/script.js" %}
+    </script>
+
+</body>
+</html>

@@ -1,13 +1,12 @@
 {
   "zuix": {
     "build": {
-      "input": "./source",
-      "output": "./build",
+      "input": "source",
+      "output": "docs",
       "copy": [
         "app",
         "css",
         "images",
-        "js",
         ".nojekyll",
         "browserconfig.xml",
         "manifest.json",
@@ -15,14 +14,20 @@
         "favicon.ico",
         "robots.txt"
       ],
+      "ignore": [
+        "_filters",
+        "app"
+      ],
+      "dataFolder": "_data",
       "includesFolder": "_inc",
       "bundle": {
-        "js": true,
-        "css": true,
-        "zuix": true
+        "js": false,
+        "css": false,
+        "zuix": false
       },
+      "serviceWorker": false,
       "minify": {
-        "disable": false,
+        "disable": true,
         "collapseWhitespace": true,
         "removeOptionalTags": true,
         "removeRedundantAttributes": true,

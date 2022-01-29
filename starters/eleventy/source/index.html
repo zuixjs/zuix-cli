@@ -1,15 +1,14 @@
 ---
-title: 'zUIx Web Starter'
-link: 'https://github.com/zuixjs/zuix-web-starter'
+title: 'zUIx.js'
 head:
-  title: 'zUIx Web Starter'
+  title: 'zUIx.js'
   description: 'Component-based web development.'
 ---
 {% include "head_open.html" %}
     <link rel="stylesheet" href="index.css">
     <!-- put any custom content that goes inside `<head>` here -->
 {% include "head_close.html" %}
-<body>
+<body style="padding: 48px">
     <noscript>Please enable JavaScript to continue using this application.</noscript>
 
     <header>
@@ -18,13 +17,10 @@ head:
 
     <main>
 
-        <h2>Documentation...</h2>
+        <h2>{{ title }}</h2>
         <ul>
             <li>
-                <a href="{{link}}">{{title}}</a>
-            </li>
-            <li>
-                <a href="https://zuixjs.github.io/zuix/#/docs">zUIx documentation</a>
+                <a href="pages/documentation/about">Documentation</a>
             </li>
             <li>
                 <a href="https://www.11ty.dev/docs/">Eleventy</a>

@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="description" content="{{head.description}}">
+    <meta name="description" content="{{description}}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{head.title}}</title>
+    <title>{{title}} - zUIx.js / 11ty</title>
 
     <!-- Disable tap highlight on IE -->
     <meta name="msapplication-tap-highlight" content="no">
@@ -39,9 +39,25 @@
     <!--
     <link rel="canonical" href="https://www.example.com/">
     -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flex-layout-attribute/1.0.3/css/flex-layout-attribute.min.css" integrity="sha512-yEBpXzOdYZzWorNkyZm0Z+w4uP1+ck0nTDCQb/Vq5mYNfljybDFcRwuBYoFOenBcRQvLBGqd40dbktMxIhDUug==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <!-- zuix https://github.com/zuixjs/zuix -->
-    <script src="{{ '/js/zuix/zuix.min.js' | url }}"></script>
+    <style>
+        :root {
+            --primary-color: #16641c;
+            --primary-color-half: #16641c88;
+            --accent-color: rgb(0 123 171);
+        }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="{{ '/css/mdl-custom-theme.css' | url }}">
+    <script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flex-layout-attribute/1.0.3/css/flex-layout-attribute.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/base16/ia-light.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+
+    <!-- zuix.js https://github.com/zuixjs/zuix -->
+    <script src="{{ '/js/zuix/zuix.js' | url }}"></script>
     <script src="{{ '/config.js' | url }}"></script>
+    <script src="{{ '/js/zuix/animate_css.js' | url }}"></script>

@@ -1,28 +1,38 @@
 const path = require('path');
 const config = require('config');
 const util = require('util');
+const compress = require('compression');
+
+// 11ty
+const { EleventyRenderPlugin } = require("@11ty/eleventy");
 
 // zuix.js CLI utils
 const zuixCompile = require('zuix-cli/commands/compile-page');
 const zuixUtils = require('zuix-cli/common/utils');
 
+// Read configuration either from './config/{default}.json'
+// or './config/production.json' based on current `NODE_ENV'
+// environment variable value
 const zuixConfig = config.get('zuix');
 const sourceFolder = zuixConfig.get('build.input');
 const buildFolder = zuixConfig.get('build.output');
 const dataFolder = zuixConfig.get('build.dataFolder');
 const includesFolder = zuixConfig.get('build.includesFolder');
 const copyFiles = zuixConfig.get('build.copy');
+const ignoreFiles = zuixConfig.get('build.ignore');
 
-// LESS
+// LESS CSS compiler
 const less = require('less');
 const lessConfig = require(process.cwd()+'/.lessrc');
 
-// ESLint
+// Linter (ESLint)
 const Linter = require('eslint').Linter;
 const linter = new Linter();
 const lintConfig = require(process.cwd()+'/.eslintrc');
 
-const { minify } = require("terser");
+// Minifier
+//const { minify } = require("terser");
+//const fs = require('fs');
 
 // Keep track of changed files for zUIx.js post-processing
 const postProcessFiles = [];
@@ -36,17 +46,39 @@ zuixUtils.copyFolder(util.format('%s/node_modules/zuix-dist/js', process.cwd()),
 // - auto-generated config.js
 zuixUtils.generateAppConfig(zuixConfig);
 
+
 module.exports = function(eleventyConfig) {
   eleventyConfig.setWatchJavaScriptDependencies(false);
+  eleventyConfig.addPlugin(EleventyRenderPlugin);
+
+  // Add ignores
+  ignoreFiles.forEach((f) => {
+    f = path.join(sourceFolder, f);
+    eleventyConfig.ignores.add(f);
+    console.log('Adding ignore "%s"', f);
+  });
   // Copy base files
   copyFiles.forEach((f) => {
-    eleventyConfig.addPassthroughCopy(`${sourceFolder}/${f}`);
+    f = path.join(sourceFolder, f);
+    eleventyConfig.addPassthroughCopy(f);
+    console.log('Adding copy "%s"', f);
   });
-  eleventyConfig.addCollection("posts_sorted", function (collectionApi) {
-    return collectionApi.getFilteredByTags('post')
-      .slice().sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+  // from https://github.com/kkgthb/web-site-11ty-03-netlify-function/blob/main/.eleventy.js
+  // See if this helps with things that do not refresh
+  module.exports = function (eleventyConfig) {
+    eleventyConfig.setUseGitIgnore(false);
+  };
+  // Make Liquid capable of rendering "partials"
+  eleventyConfig.setLiquidOptions({
+    cache: false,
+    dynamicPartials: true,
+    strictFilters: false,
   });
-  // Add Nunjucks
+
+  // Add custom file types and handlers
+  eleventyConfig.addTemplateFormats([ 'less', 'css', 'js' ]);
+  /*
   eleventyConfig.addNunjucksAsyncFilter("jsmin", async function (
       code,
       callback
@@ -60,18 +92,6 @@ module.exports = function(eleventyConfig) {
       callback(null, code);
     }
   });
-  // Declare custom types / handlers
-  eleventyConfig.addExtension('less', {
-    read: true,
-    outputFileExtension: 'css',
-    compile: (content, path) => () => {
-        let output;
-        less.render(content, lessConfig, function(error, lessOutput) {
-          output = lessOutput;
-        });
-        return output.css;
-      }
-  });
   eleventyConfig.addExtension('js', {
     read: true,
     outputFileExtension: 'js',
@@ -80,11 +100,23 @@ module.exports = function(eleventyConfig) {
       return output.code;
     }
   });
-  // Add custom file types
-  eleventyConfig.addTemplateFormats([ 'less', 'css', 'js' ]);
-  // Add linter
+   */
+  eleventyConfig.addExtension('less', {
+    read: true,
+    outputFileExtension: 'css',
+    compile: (content, path) => () => {
+        let output;
+        less.render(content, lessConfig, function(error, lessOutput) {
+          // TODO: handle and report 'error'
+          output = lessOutput;
+        });
+        return output.css;
+      }
+  });
+  // Add linter to report code errors
   eleventyConfig.addLinter('eslint', function(content, inputPath, outputPath) {
     if( inputPath.endsWith('.js') ) {
+      // TODO: collect and report at the end of the build (inside 'afterBuild' event handler)
       const issues = linter.verify(content, lintConfig, inputPath);
       if (issues.length > 0) {
         console.log('[11ty] "%s" linter result', inputPath)
@@ -98,17 +130,29 @@ module.exports = function(eleventyConfig) {
       });
     }
   });
-  // add any BrowserSync config option here
+  // Add any BrowserSync config option here
   eleventyConfig.setBrowserSyncConfig({
     //reloadDelay: 2000,
     //files: [ path.resolve(sourceFolder, 'app') ],
-    notify: true,
+    notify: false,
+    cors: true,
+    middleware: [compress()],
     callbacks: {
       ready: function(err, bs) {
         // store a local reference of BrowserSync object
         browserSync = bs;
       }
-    }
+    },
+    /*
+    snippet: false,
+    snippetOptions: {
+      rule: {
+        match: /<head[^>]*>/i,
+        fn: function(snippet, match) {
+          return match + snippet;
+        }
+      }
+    }*/
   });
 
 
@@ -172,6 +216,11 @@ module.exports = function(eleventyConfig) {
   });
 
 
+  // integrate custom user config with a dedicated
+  // `eleventy-config.js` module file
+  require('./eleventy-config')(eleventyConfig);
+
+
   // Return 11ty configuration options:
   return {
     pathPrefix: zuixConfig.app.baseUrl,
@@ -182,7 +231,8 @@ module.exports = function(eleventyConfig) {
       includes: includesFolder,
       layouts: "_inc/layouts"
     },
-    //markdownTemplateEngine: false,
-    //templateFormats: ['html', 'liquid', 'ejs', 'hbs', 'mustache', 'haml', 'pug', 'njk', '11ty.js']
+    //htmlTemplateEngine: false, // 'liquid'
+    markdownTemplateEngine: 'liquid',
+    templateFormats: ['html', 'liquid', 'ejs', 'md', 'hbs', 'mustache', 'haml', 'pug', 'njk', '11ty.js']
   }
 };
