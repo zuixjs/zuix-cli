@@ -1,5 +1,5 @@
-{% assign prevPost = collections.posts_documentation | getPreviousCollectionItem: page %}
-{% assign nextPost = collections.posts_documentation | getNextCollectionItem: page %}
+{% assign prevPost = collections.posts_blog | getPreviousCollectionItem: page %}
+{% assign nextPost = collections.posts_blog | getNextCollectionItem: page %}
 
 <div -self="size-large" layout="row center-spread" style="margin-top: 96px; margin-bottom: 56px; padding-left: 8px; padding-right: 8px; font-size: 140%">
     {% if prevPost %}
@@ -8,7 +8,7 @@
             <i class="material-icons">arrow_left</i>&nbsp;
             <span style="padding-right: 24px">Previous</span>
         </label>
-        <div layout="row center-center" class="mdl-color-text--pink">{{ prevPost.data.title }}</div>
+        <div layout="row center-center">{{ prevPost.data.title }}</div>
     </a>
     {% endif %}
     {% if nextPost %}
@@ -17,7 +17,7 @@
             <span style="padding-left: 24px">Next</span>
             <i class="material-icons">arrow_right</i>&nbsp;
         </label>
-        <div layout="row center-center" class="mdl-color-text--pink">{{ nextPost.data.title }}</div>
+        <div layout="row center-center">{{ nextPost.data.title }}</div>
     </a>
     {% endif %}
 </div>
