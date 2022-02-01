@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx @11ty/eleventy --serve",
     "incremental": "npx @11ty/eleventy --incremental --serve",
-    "build": "npx @11ty/eleventy"
+    "build": "npx @11ty/eleventy",
+    "preinstall": "npm i -g zuix-cli"
   },
   "keywords": [
     "zuix",
@@ -40,7 +41,7 @@
     "eslint": "^8.4.1",
     "eslint-config-google": "^0.14.0",
     "less": "^4.1.2",
-    "zuix-cli": "^0.1.0-beta.0",
+    "zuix-cli": "^0.1.0-beta.1",
     "zuix-dist": "^1.0.10"
   }
 }
