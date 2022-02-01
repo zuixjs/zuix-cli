@@ -1,13 +1,23 @@
 {
   "name": "zuix-cli",
-  "version": "1.0.0",
+  "version": "0.1.0-beta.0",
   "description": "zUIx.js command line tool",
   "bin": {
     "zx": "index.js"
   },
   "keywords": [],
-  "author": "",
   "license": "ISC",
+  "author": {
+    "name": "G-Labs",
+    "email": "info@glabs.it",
+    "url": "https://glabs.it/"
+  },
+  "homepage": "https://github.com/zuixjs",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/zuixjs/zuix-cli.git"
+  },
+  "bugs": "https://github.com/zuixjs/zuix-cli/issues",
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^8.3.0",
