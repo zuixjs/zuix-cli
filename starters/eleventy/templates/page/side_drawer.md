@@ -1,11 +1,11 @@
 ---
 layout: side_drawer.html
 title: {{name}}
-description:
+description: Page description
 keywords:
 - {{name}}
 ---
 
-# It works!
+# {{name}}
 
-Welcome "{{name}}" =)
+It works! =)

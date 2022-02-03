@@ -101,9 +101,21 @@ function generateServiceWorker(opts) {
 
     });
 }
+function hyphensToCamelCase(s) {
+    return s.replace(/-([a-z0-9_$-])/g, function (g) {
+        return '_$-'.indexOf(g[1]) > -1 || (+g[1]).toString() === g[1] ?
+            '_' + g[1].replace('-', '_') : g[1].toUpperCase();
+    });
+}
+function classNameFromHyphens(s) {
+    const name = hyphensToCamelCase(s);
+    return name.charAt(0).toUpperCase() + name.slice(1);
+}
 
 module.exports = {
     copyFolder: copyFolder,
     generateAppConfig: generateAppConfig,
-    generateServiceWorker: generateServiceWorker
+    generateServiceWorker: generateServiceWorker,
+    hyphensToCamelCase: hyphensToCamelCase,
+    classNameFromHyphens: classNameFromHyphens
 };

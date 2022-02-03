@@ -14,7 +14,8 @@ program
     .command('generate')
     .alias('g')
     .addArgument(new Argument('<schematic>', 'The schematic to generate')
-        .choices(['page', 'component']))
+        .choices(['page', 'component', 'controller', 'template']))
+    .addArgument(new Argument('[options]', 'Schematic options'))
     .addArgument(new Argument('[options]', 'Schematic options'))
     .description('Generates and/or modifies files based on a schematic')
     .action(generatePage);
