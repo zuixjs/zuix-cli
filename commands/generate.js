@@ -1,11 +1,43 @@
+/*
+ * Copyright 2020-2022 G-Labs. All Rights Reserved.
+ *         https://zuixjs.github.io/zuix
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ *
+ *  This file is part of
+ *  zUIx, Javascript library for component-based development.
+ *        https://zuixjs.github.io/zuix
+ *
+ * @author Generoso Martello <generoso@martello.com>
+ */
+
 const chalk = require('chalk');
 const render = require('template-file').render;
 const util = require('../common/utils');
 const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
+const highlight = require('cli-highlight').highlight
 
-async function generatePage(...args) {
+let cutHereMark = '';
+for (let i = 0; i < 5 ; i++) {
+  cutHereMark += '·····' + chalk.yellowBright('\u2704') + '·····';
+}
+
+async function generate(...args) {
   let template;
   let schematic = args[0];
   const options = args[1];
@@ -85,7 +117,11 @@ async function generatePage(...args) {
           fs.writeFileSync(destinationName + 'js', js);
           console.log('-', chalk.yellow('added'), destinationName + 'js');
         }
-        console.log(chalk.cyanBright('*') + ' NEW componentId:', chalk.green.bold(componentId));
+        console.log('\nNEW componentId:', chalk.green.bold(componentId));
+        const type = schematic === 'controller' ? 'ctrl ' : schematic === 'template' ? 'view ' : '';
+        console.log(cutHereMark);
+        console.log(highlight(`<div ${type}z-load="${componentId}"></div>`, { language: 'html' }));
+        console.log(cutHereMark + '\n');
       }
       break;
     default:
@@ -95,4 +131,4 @@ async function generatePage(...args) {
   }
 }
 
-module.exports = generatePage;
+module.exports = generate;

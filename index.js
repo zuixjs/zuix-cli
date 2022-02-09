@@ -1,8 +1,34 @@
 #! /usr/bin/env node
+
+/*
+ * Copyright 2020-2022 G-Labs. All Rights Reserved.
+ *         https://zuixjs.github.io/zuix
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ *
+ *  This file is part of
+ *  zUIx, Javascript library for component-based development.
+ *        https://zuixjs.github.io/zuix
+ *
+ * @author Generoso Martello <generoso@martello.com>
+ */
+
 const {program, Option, Argument} = require('commander');
 const newProject = require('./commands/new-project');
-const generatePage = require('./commands/generate-page');
-const generateComponent = require('./commands/generate-component');
+const generate = require('./commands/generate');
 const compilePage = require('./commands/compile-page');
 
 program
@@ -17,24 +43,8 @@ program
         .choices(['page', 'component', 'controller', 'template']))
     .addArgument(new Argument('[options...]', 'Schematic options'))
     .description('Generates and/or modifies files based on a schematic')
-    .action(generatePage);
-/*
-program
-    .command('gp <page_name>')
-    .description('Add a new page using the default template')
-    .action((...args) => generatePage('page', ...args));
+    .action(generate);
 
-program
-    .command('"gc" <component_name>')
-    .description('Add a new component')
-    .action((...args) => generatePage('component', ...args));
-
-program
-    .command('gc')
-    .alias('generate-component')
-    .description('Add a new component')
-    .action(generateComponent);
-*/
 program
   .command('compile <inputFile> [outputFile] [pathPrefix]')
   .alias('c')
@@ -46,5 +56,5 @@ program.showSuggestionAfterError();
 program.parse();
 
 module.exports = {
-  newProject, generatePage, generateComponent, compilePage
+  newProject, generate, compilePage
 }
