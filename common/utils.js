@@ -108,7 +108,8 @@ function hyphensToCamelCase(s) {
     });
 }
 function classNameFromHyphens(s) {
-    const name = hyphensToCamelCase(s);
+    const baseName = path.basename(s + '.js', '.js');
+    const name = hyphensToCamelCase(baseName);
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 

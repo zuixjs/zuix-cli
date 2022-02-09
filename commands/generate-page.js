@@ -6,19 +6,21 @@ const path = require('path');
 const mkdirp = require('mkdirp');
 
 async function generatePage(...args) {
+  let template;
   let schematic = args[0];
-  const argument = args[1];
+  const options = args[1];
   switch (schematic) {
     case 'page':
-      let outputFile = args[2];
+      template = options[0];
+      let outputFile = options[1];
       const pageName = util.classNameFromHyphens(path.basename(outputFile));
       console.log(
           chalk.cyanBright('*') + ' Generating',
           chalk.yellow.bold(schematic),
-          argument, '→',
+          template, '→',
           outputFile
       );
-      const componentTemplate = './templates/page/' + argument + '.md';
+      const componentTemplate = './templates/page/' + template + '.md';
       if (fs.existsSync(componentTemplate)) {
         let pageTemplate = fs.readFileSync(componentTemplate).toString('utf8');
         pageTemplate = render(pageTemplate, {name: pageName});
@@ -42,15 +44,16 @@ async function generatePage(...args) {
     case 'component':
     case 'controller':
     case 'template':
-      const className = util.classNameFromHyphens(argument);
+      template = options[0];
+      const className = util.classNameFromHyphens(template);
       console.log(
           chalk.cyanBright('*') + ' Generating',
           chalk.yellow.bold(schematic),
-          argument, '→',
+          template, '→',
           chalk.green.bold(className)
       );
       // check first if already exists
-      const componentId = `${schematic}s/${argument}`;
+      const componentId = `${schematic}s/${template}`;
       // TODO: read "./source/app/" from `./config/default-production.json`
       const destinationName = `./source/app/${componentId}.`;
       if (fs.existsSync(destinationName + 'js') || fs.existsSync(destinationName + 'css') || fs.existsSync(destinationName + 'html')) {
@@ -58,20 +61,27 @@ async function generatePage(...args) {
             chalk.red.bold('A file with that name already exists.')
         );
       } else {
+        // create output folder if does not exists
+        mkdirp.sync(path.dirname(destinationName + 'js'));
+        const templateData = {
+          componentId,
+          name: className,
+          author: process.env.LOGNAME
+        };
         const componentTemplate = './templates/component/component.';
         let css = fs.readFileSync(componentTemplate + 'css').toString('utf8');
         let html = fs.readFileSync(componentTemplate + 'html').toString('utf8');
         let js = fs.readFileSync(componentTemplate + 'js').toString('utf8');
         if (schematic === 'component' || schematic === 'template') {
-          html = render(html, {name: className});
+          html = render(html, templateData);
           fs.writeFileSync(destinationName + 'html', html);
           console.log('-', chalk.yellow('added'), destinationName + 'html');
-          css = render(css, {name: className});
+          css = render(css, templateData);
           fs.writeFileSync(destinationName + 'css', css);
           console.log('-', chalk.yellow('added'), destinationName + 'css');
         }
         if (schematic === 'component' || schematic === 'controller') {
-          js = render(js, {name: className});
+          js = render(js, templateData);
           fs.writeFileSync(destinationName + 'js', js);
           console.log('-', chalk.yellow('added'), destinationName + 'js');
         }
