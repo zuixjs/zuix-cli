@@ -5,6 +5,7 @@ module.exports = {
         output: 'docs',
         dataFolder: '_data',
         includesFolder: '_inc',
+        componentsFolders: [ 'app', 'lib' ],
         bundle: {
             js: false,
             css: false,

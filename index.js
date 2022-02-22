@@ -30,6 +30,14 @@ const {program, Option, Argument} = require('commander');
 const newProject = require('./commands/new-project');
 const generate = require('./commands/generate');
 const compilePage = require('./commands/compile-page');
+const pkg = require('./package.json');
+
+program
+    .command('version')
+    .description('output CLI version')
+    .action(() => {
+      console.log(`${pkg.name} v${pkg.version}`);
+    });
 
 program
     .command('new <project_name>')

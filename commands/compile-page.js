@@ -32,14 +32,6 @@ const util = require('util');
 const request = require('sync-request');
 const stringify = require('json-stringify');
 
-// swig-markdown (static-site)
-//const staticSite = require('./swig-md');
-// ESLint
-//const linter = require('eslint').linter;
-//const lintConfig = require(process.cwd() + '/.eslintrc');
-// LESS
-//const less = require('less');
-//const lessConfig = require(process.cwd() + '/.lessrc');
 // minifier
 const minify = require('html-minifier').minify;
 const mkdirp = require('mkdirp');
@@ -168,10 +160,6 @@ function createBundle(content, fileName) {
           }
           content = fetchResource(filePath + '.js', true);
           if (content != null) {
-// TODO: apply template engine 11ty (?)
-// TODO: apply template engine 11ty (?)
-// TODO: apply template engine 11ty (?)
-//            content = staticSite.swig({file: filePath + '.js', content: content}, localVars)._result.contents;
             zuixBundle.controllerList.push({path: resourcePath, content: content});
           }
         }
@@ -416,7 +404,6 @@ function generateApp(content, fileName) {
 
 function compilePage(relativeFilePath, outputFile, opts) {
   Object.assign(options, opts);
-  //console.log('BASE FOLDER', options.baseFolder);
   const inputFile = path.join(options.baseFolder, relativeFilePath);
   tlog.overwrite('   ^C%s^: reading "%s"', tlog.busyCursor(), inputFile);
   const error = '   ^#^R^W[%s]^:';
@@ -443,7 +430,6 @@ function compilePage(relativeFilePath, outputFile, opts) {
   hasErrors = false;
   // zUIx bundle
   tlog.overwrite('^w%s^:', outputFile).br();
-//  let postProcessed = false;
   if (relativeFilePath.endsWith('.html')) {
     // Generate resources bundle
     tlog.overwrite(' ^r*^: resource bundle');
@@ -465,7 +451,6 @@ function compilePage(relativeFilePath, outputFile, opts) {
         );
       }
       tlog.info();
-//      postProcessed = true;
     } else {
       //tlog.overwrite();
     }
@@ -479,54 +464,6 @@ function compilePage(relativeFilePath, outputFile, opts) {
     tlog.overwrite();
   }
 
-//  if (isStaticSite) {
-//    tlog.info(' ^G\u2713^: static-site content').br();
-//    postProcessed = true;
-//  }
-  /*
-    if (options.build.esLint) {
-      // run ESlint
-      if (page.file.endsWith('.js')) {
-        tlog.info(' ^r*^: lint');
-        const issues = linter.verify(page.content, lintConfig, page.file);
-        issues.forEach(function(m) {
-          if (m.fatal || m.severity > 1) {
-            tlog.error('   ^RError^: %s ^R(^Y%s^w:^Y%s^R)', m.message, m.line, m.column);
-          } else {
-            tlog.warn('   ^YWarning^: %s ^R(^Y%s^w:^Y%s^R)', m.message, m.line, m.column);
-          }
-        });
-        if (issues.length === 0) {
-          tlog.overwrite(' ^G\u2713^: lint');
-        }
-        tlog.info();
-        postProcessed = true;
-      }
-    }
-
-    if (options.build.less) {
-      // run LESS
-      if (page.file.endsWith('.less')) {
-        tlog.info(' ^r*^: less');
-        less.render(page.content, lessConfig, function(error, output) {
-          const baseName = page.dest.substring(0, page.dest.length - 5);
-          mkdirp(path.dirname(baseName + '.css'), function(err) {
-            if (err) return cb(err);
-            fs.writeFileSync(baseName + '.css', output.css);
-            // TODO: source map generation disabled
-            //fs.writeFileSync(baseName+'.css.map', output.map);
-          });
-          tlog.overwrite(' ^G\u2713^: less');
-        });
-        tlog.info();
-        postProcessed = true;
-      }
-    }
-    cb(null, page.content);
-   */
-//  if (!postProcessed) {
-//  tlog.info();
-//  }
   outputFile = path.join(options.baseFolder, outputFile);
   if (content !== initialContent || inputFile !== outputFile) {
     mkdirp.sync(path.dirname(outputFile));
