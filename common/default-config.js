@@ -11,6 +11,7 @@ module.exports = {
             css: false,
             zuix: false
         },
+        serviceWorker: false,
         minify: {
             disable: true,
             collapseWhitespace: true,
@@ -27,9 +28,10 @@ module.exports = {
         }
     },
     app: {
-        resourcePath: '/app/', // where to load components/fragments from
+        baseUrl: "/",
+        resourcePath: "{{ app.baseUrl }}app/", // where to load components/fragments from
         libraryPath: {
-            '@lib': 'https://zuixjs.github.io/zkit/lib/',
+            '@lib': 'https://zuixjs.github.io/zkit/lib/1.1/',
             '@cdnjs': 'https://cdnjs.cloudflare.com/ajax/libs/'
         }
     }

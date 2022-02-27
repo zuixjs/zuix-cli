@@ -60,23 +60,24 @@ function copyFolder(source, destination, done) {
 }
 
 function generateAppConfig(opts) {
-    const config = Object.assign(options, opts);
+    let config = Object.assign(options, opts);
+    config = JSON.parse(render(JSON.stringify(config), config));
     let cfg = `/* eslint-disable quotes */
 (function() {
   zuix.store('config', `;
-  cfg += JSON.stringify(config.app, null, 2).replaceAll('\n', '\n  ');
-  cfg += ');\n';
-  // WorkBox / Service Worker
-  // TODO: fix service-worker path
-  cfg += `  // Check that service workers are registered
-  const app = zuix.store('config');
+    cfg += JSON.stringify(config.app, null, 2).replaceAll('\n', '\n  ');
+    cfg += ');\n';
+    // WorkBox / Service Worker
+    if (config.build.serviceWorker) {
+        cfg += render(`  // Check that service workers are registered
   if ('serviceWorker' in navigator) {
     // Use the window load event to keep the page load performant
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register(app.baseUrl + 'service-worker.js');
+      navigator.serviceWorker.register('{{ app.baseUrl }}service-worker.js');
     });
-  }
-})();\n`;
+  }\n`, config);
+    }
+    cfg += '})();\n';
     fs.writeFileSync(config.build.output+'/config.js', cfg);
 }
 
