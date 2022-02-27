@@ -37,8 +37,7 @@ const minify = require('html-minifier').minify;
 const mkdirp = require('mkdirp');
 
 // zuix-bundler cli
-const jsdom = require('jsdom');
-const {JSDOM} = jsdom;
+const {JSDOM, VirtualConsole} = require('jsdom');
 
 // logging
 const tlog = require('../common/logger');
@@ -72,7 +71,7 @@ while ((result = reg.exec(scriptText)) !== null) {
 // TODO: implement also `z-` prefix backward compatible with older `data-ui` prefix
 
 function createBundle(content, fileName) {
-  const virtualConsole = new jsdom.VirtualConsole();
+  const virtualConsole = new VirtualConsole();
   const dom = new JSDOM(content, {virtualConsole});
   if (content.indexOf('<html') < 0 && content.indexOf('<HTML') < 0) {
     dom.unwrap = true;

@@ -32,6 +32,7 @@ const ncp = require('ncp').ncp;
 const chalk = require('chalk');
 const options = require('./default-config');
 const workBox = require('workbox-build');
+const render = require('template-file').render;
 
 function copyFolder(source, destination, done) {
     // ncp.limit = 16;
@@ -80,7 +81,8 @@ function generateAppConfig(opts) {
 }
 
 function generateServiceWorker(opts) {
-    const config = Object.assign(options, opts);
+    let config = Object.assign(options, opts);
+    config = JSON.parse(render(JSON.stringify(config), config));
     // This will return a Promise
     return workBox.generateSW({
 
