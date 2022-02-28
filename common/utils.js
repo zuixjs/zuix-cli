@@ -30,9 +30,10 @@ const path = require("path");
 const mkdirp = require("mkdirp");
 const ncp = require('ncp').ncp;
 const chalk = require('chalk');
+const {render} = require('template-file');
+const {highlight} = require('cli-highlight');
 const options = require('./default-config');
 const workBox = require('workbox-build');
-const render = require('template-file').render;
 
 function copyFolder(source, destination, done) {
     // ncp.limit = 16;
@@ -143,9 +144,13 @@ function classNameFromHyphens(s) {
 }
 
 module.exports = {
-    copyFolder: copyFolder,
-    generateAppConfig: generateAppConfig,
-    generateServiceWorker: generateServiceWorker,
-    hyphensToCamelCase: hyphensToCamelCase,
-    classNameFromHyphens: classNameFromHyphens
+    copyFolder,
+    generateAppConfig,
+    generateServiceWorker,
+    hyphensToCamelCase,
+    classNameFromHyphens,
+    chalk,
+    mkdirp,
+    render,
+    highlight
 };

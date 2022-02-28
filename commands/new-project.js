@@ -24,32 +24,30 @@
  * @author Generoso Martello <generoso@martello.com>
  */
 
-const chalk = require('chalk');
-const path = require("path");
-const utils = require('../common/utils');
-const extractZip = require("extract-zip");
-const http = require('https');
 const fs = require('fs');
-const mkdirp = require("mkdirp");
+const path = require("path");
+const http = require('https');
+const extractZip = require("extract-zip");
+const utils = require('../common/utils');
 
 function newProject(name) {
   const folder = name;
   if (!fs.existsSync(folder)) {
-    mkdirp.sync(folder);
-    console.debug('- %s "%s"', chalk.blue.bold('created folder'), folder);
+    utils.mkdirp.sync(folder);
+    console.debug('- %s "%s"', utils.chalk.blue.bold('created folder'), folder);
     const templateName = 'zuix-web-starter';
     const templatePath = 'https://codeload.github.com/zuixjs/' + templateName + '/zip/refs/heads/master';
     const zipFile = path.join(folder, 'web-starter.zip');
     const file = fs.createWriteStream(zipFile);
-    console.debug('- %s', chalk.blue('downloading web-starter'));
+    console.debug('- %s', utils.chalk.blue('downloading web-starter'));
     http.get(templatePath, function(response) {
       response.pipe(file);
       file.on('finish', function() {
         file.close(async () => {
-          console.log('- %s', chalk.blue('extracting'));
+          console.log('- %s', utils.chalk.blue('extracting'));
           await extractZip(zipFile, {dir: path.resolve(folder)}).then(() => {
             fs.unlinkSync(zipFile);
-            console.log('- %s', chalk.blue('copying files'));
+            console.log('- %s', utils.chalk.blue('copying files'));
             const templateFolder = path.join(folder, templateName + '-master');
             if (!utils.copyFolder(templateFolder, name, () => {
               fs.rmSync(templateFolder, { recursive: true });
@@ -57,11 +55,11 @@ function newProject(name) {
               // TODO: should replace '%name%' with project
               //       name in `packages.json' config
 
-              console.log('- %s', chalk.blue('installing packages'));
+              console.log('- %s', utils.chalk.blue('installing packages'));
               npmInstall(name);
-              console.log(chalk.green.bold('Done!'));
+              console.log(utils.chalk.green.bold('Done!'));
             })) {
-              console.log(chalk.red.bold('Error!'));
+              console.log(utils.chalk.red.bold('Error!'));
             }
           });
         });
@@ -71,7 +69,7 @@ function newProject(name) {
     });
 
   } else {
-    console.log(chalk.red.bold('A folder with that name already exists!'));
+    console.log(utils.chalk.red.bold('A folder with that name already exists!'));
   }
 }
 

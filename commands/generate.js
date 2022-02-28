@@ -24,13 +24,9 @@
  * @author Generoso Martello <generoso@martello.com>
  */
 
-const chalk = require('chalk');
-const render = require('template-file').render;
-const util = require('../common/utils');
+const {chalk, mkdirp, render, highlight, classNameFromHyphens} = require('../common/utils');
 const fs = require('fs');
 const path = require('path');
-const mkdirp = require('mkdirp');
-const highlight = require('cli-highlight').highlight
 
 let cutHereMark = '';
 for (let i = 0; i < 5 ; i++) {
@@ -42,42 +38,11 @@ async function generate(...args) {
   let schematic = args[0];
   const options = args[1];
   switch (schematic) {
-    case 'page':
-      template = options[0];
-      let outputFile = options[1];
-      const pageName = util.classNameFromHyphens(path.basename(outputFile));
-      console.log(
-          chalk.cyanBright('*') + ' Generating',
-          chalk.yellow.bold(schematic),
-          template, '→',
-          outputFile
-      );
-      const componentTemplate = './templates/page/' + template + '.md';
-      if (fs.existsSync(componentTemplate)) {
-        let pageTemplate = fs.readFileSync(componentTemplate).toString('utf8');
-        pageTemplate = render(pageTemplate, {name: pageName});
-        const outputPath = path.join('./source/pages/', outputFile, '..');
-        outputFile = path.join('./source/pages/', outputFile + '.md');
-        if (!fs.existsSync(outputFile)) {
-          mkdirp.sync(outputPath);
-          fs.writeFileSync(outputFile, pageTemplate);
-          console.log(chalk.cyanBright('*') + ' NEW page:', chalk.green.bold(outputFile));
-        } else {
-          console.error(
-              chalk.red.bold('A file with that name already exists.')
-          );
-        }
-      } else {
-        console.error(
-            chalk.red.bold('Invalid page template:', componentTemplate)
-        );
-      }
-      break;
     case 'component':
     case 'controller':
     case 'template':
       template = options[0];
-      const className = util.classNameFromHyphens(template);
+      const className = classNameFromHyphens(template);
       console.log(
           chalk.cyanBright('*') + ' Generating',
           chalk.yellow.bold(schematic),
