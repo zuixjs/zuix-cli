@@ -1,4 +1,4 @@
-#! /usr/bin/env node
+#!/usr/bin/env node
 
 /*
  * Copyright 2020-2022 G-Labs. All Rights Reserved.
