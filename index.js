@@ -33,6 +33,7 @@ const compilePage = require('./commands/compile-page');
 const pkg = require('./package.json');
 const fs = require('fs');
 const path = require('path');
+const child_process = require("child_process");
 
 program
     .command('version')
@@ -43,8 +44,18 @@ program
 
 program
     .command('new <project_name>')
-    .description('Create a new zUIx site')
+    .description('Creates a new project')
     .action(newProject);
+
+program
+    .command('start')
+    .description('Starts the development server')
+    .action(() => {
+        // todo: should check if it's a zuix.js project
+        child_process.execSync('npm start',{
+            stdio:[0, 1, 2]
+        });
+    });
 
 program
     .command('generate')
@@ -58,7 +69,7 @@ program
 program
   .command('compile <inputFile> [outputFile] [pathPrefix]')
   .alias('c')
-  .description('Compile a page')
+  .description('Compiles a page')
   .action(compilePage);
 
 // load custom commands from current project folder
