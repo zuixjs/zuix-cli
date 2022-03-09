@@ -28,10 +28,15 @@ const fs = require('fs');
 const path = require("path");
 const http = require('https');
 const extractZip = require("extract-zip");
+const merge = require('deepmerge');
 const utils = require('../common/utils');
 
 function newProject(name) {
   const folder = name;
+  if (fs.existsSync('package.json') || fs.existsSync('node_modules')) {
+    console.log(utils.chalk.red.bold('Cannot create a new site inside a folder of another project.'));
+    return;
+  }
   if (!fs.existsSync(folder)) {
     utils.mkdirp.sync(folder);
     console.debug('- %s "%s"', utils.chalk.blue.bold('created folder'), folder);
@@ -52,8 +57,20 @@ function newProject(name) {
             if (!utils.copyFolder(templateFolder, name, () => {
               fs.rmSync(templateFolder, { recursive: true });
 
-              // TODO: should replace '%name%' with project
-              //       name in `packages.json' config
+              // replace project 'name' in config/*.json and packages.json
+              const appConfig = {
+                zuix: {
+                  app: {
+                    title: name,
+                    subtitle: 'A new awesome website!'
+                  }
+                }
+              };
+              updateConfigFile(path.resolve(name, 'config', 'default.json'), appConfig);
+              updateConfigFile(path.resolve(name, 'config', 'production.json'), appConfig);
+              updateConfigFile(path.resolve(name, 'package.json'), {
+                name, version: '1.0.0', description: appConfig.description
+              }, [ 'keywords', 'author', 'homepage', 'repository', 'bugs' ]);
 
               console.log('- %s', utils.chalk.blue('installing packages'));
               npmInstall(name);
@@ -71,6 +88,14 @@ function newProject(name) {
   } else {
     console.log(utils.chalk.red.bold('A folder with that name already exists!'));
   }
+}
+
+function updateConfigFile(configFile, data, deleteKeys) {
+  const config = require(configFile);
+  if (deleteKeys) {
+    deleteKeys.forEach(k => delete config[k]);
+  }
+  fs.writeFileSync(configFile, JSON.stringify(merge(config, data), null, 2));
 }
 
 function npmInstall(projectPath) {

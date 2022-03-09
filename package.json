@@ -1,6 +1,6 @@
 {
   "name": "zuix-cli",
-  "version": "0.2.0-beta.9",
+  "version": "0.2.0-beta.10",
   "description": "zUIx.js command line tool",
   "bin": {
     "zx": "index.js"
@@ -24,6 +24,7 @@
     "commander": "^9.0.0",
     "conf": "^10.1.1",
     "config": "^3.3.7",
+    "deepmerge": "^4.2.2",
     "extract-zip": "^2.0.1",
     "html-minifier": "^4.0.0",
     "jsdom": "^19.0.0",
