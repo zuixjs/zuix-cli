@@ -25,15 +25,15 @@
  */
 
 // destination type must match source (dir/dir or file/file)
-const fs = require("fs");
-const path = require("path");
-const mkdirp = require("mkdirp");
+const fs = require('fs');
+const path = require('path');
+const mkdirp = require('mkdirp');
 const ncp = require('ncp').ncp;
 const chalk = require('chalk');
-const {render} = require('template-file');
-const {highlight} = require('cli-highlight');
-const options = require('./default-config');
+const nunjucks = require('nunjucks');
 const workBox = require('workbox-build');
+
+const options = require('./default-config');
 
 function copyFolder(source, destination, done) {
     // ncp.limit = 16;
@@ -62,7 +62,7 @@ function copyFolder(source, destination, done) {
 
 function generateAppConfig(opts) {
     let config = Object.assign(options, opts);
-    config = JSON.parse(render(JSON.stringify(config), config));
+    config = JSON.parse(nunjucks.renderString(JSON.stringify(config), config));
     let cfg = `/* eslint-disable quotes */
 (function() {
   zuix.store('config', `;
@@ -70,7 +70,7 @@ function generateAppConfig(opts) {
     cfg += ');\n';
     // WorkBox / Service Worker
     if (config.build.serviceWorker) {
-        cfg += render(`  // Check that service workers are registered
+        cfg += nunjucks.renderString(`  // Check that service workers are registered
   if ('serviceWorker' in navigator) {
     // Use the window load event to keep the page load performant
     window.addEventListener('load', () => {
@@ -84,7 +84,7 @@ function generateAppConfig(opts) {
 
 function generateServiceWorker(opts) {
     let config = Object.assign(options, opts);
-    config = JSON.parse(render(JSON.stringify(config), config));
+    config = JSON.parse(nunjucks.renderString(JSON.stringify(config), config));
     // This will return a Promise
     return workBox.generateSW({
 
@@ -148,9 +148,5 @@ module.exports = {
     generateAppConfig,
     generateServiceWorker,
     hyphensToCamelCase,
-    classNameFromHyphens,
-    chalk,
-    mkdirp,
-    render,
-    highlight
+    classNameFromHyphens
 };

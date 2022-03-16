@@ -51,7 +51,7 @@ const zuixBundle = {
 let stats;
 let hasErrors;
 
-const LIBRARY_PATH_DEFAULT = 'https://zuixjs.github.io/zkit/lib';
+const LIBRARY_PATH_DEFAULT = 'https://zuixjs.github.io/zkit/lib/1.1';
 const options = require('../common/default-config');
 
 // TODO: implement embedding of resources loaded with `zuix.using(..)` and `zuix.load(..)`

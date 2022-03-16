@@ -1,9 +1,9 @@
 {
   "name": "zuix-cli",
-  "version": "0.2.0-beta.10",
+  "version": "0.3.0-beta.1",
   "description": "zUIx.js command line tool",
   "bin": {
-    "zx": "index.js"
+    "zx": "zx.js"
   },
   "keywords": [],
   "license": "ISC",
@@ -31,6 +31,7 @@
     "json-stringify": "^1.0.0",
     "mkdirp": "^1.0.4",
     "ncp": "^2.0.0",
+    "nunjucks": "^3.2.3",
     "sync-request": "^4.0.3",
     "template-file": "^6.0.1",
     "terminal-kit": "^2.4.0",

@@ -26,61 +26,20 @@
  * @author Generoso Martello <generoso@martello.com>
  */
 
-const {program, Argument} = require('commander');
 const newProject = require('./commands/new-project');
 const generate = require('./commands/generate');
 const compilePage = require('./commands/compile-page');
-const pkg = require('./package.json');
-const fs = require('fs');
-const path = require('path');
-const child_process = require("child_process");
-
-program
-    .command('version')
-    .description('output CLI version')
-    .action(() => {
-      console.log(`${pkg.name} v${pkg.version}`);
-    });
-
-program
-    .command('new <project_name>')
-    .description('Creates a new project')
-    .action(newProject);
-
-program
-    .command('start')
-    .description('Starts the development server')
-    .action(() => {
-        // todo: should check if it's a zuix.js project
-        child_process.execSync('npm start',{
-            stdio:[0, 1, 2]
-        });
-    });
-
-program
-    .command('generate')
-    .alias('g')
-    .addArgument(new Argument('<schematic>', 'The schematic to generate')
-        .choices(['component', 'controller', 'template']))
-    .addArgument(new Argument('[options...]', 'Schematic options'))
-    .description('Generates and/or modifies files based on a schematic')
-    .action(generate);
-
-program
-  .command('compile <inputFile> [outputFile] [pathPrefix]')
-  .alias('c')
-  .description('Compiles a page')
-  .action(compilePage);
-
-// load custom commands from current project folder
-if (fs.existsSync(path.resolve('./.zuix.js'))) {
-  require(path.resolve('./.zuix'))(program);
-}
-
-program.showSuggestionAfterError();
-
-program.parse();
+const {
+  copyFolder,
+  generateServiceWorker,
+  generateAppConfig
+} = require('./common/utils');
 
 module.exports = {
-  newProject, generate, compilePage
+  newProject,
+  generate,
+  compilePage,
+  copyFolder,
+  generateServiceWorker,
+  generateAppConfig
 }

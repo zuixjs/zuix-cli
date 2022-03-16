@@ -24,7 +24,11 @@
  * @author Generoso Martello <generoso@martello.com>
  */
 
-const {chalk, mkdirp, render, highlight, classNameFromHyphens} = require('../common/utils');
+const {classNameFromHyphens} = require('../common/utils');
+const chalk = require('chalk');
+const mkdirp = require('mkdirp');
+const nunjucks = require('nunjucks');
+const highlight = require('cli-highlight');
 const fs = require('fs');
 const path = require('path');
 
@@ -70,15 +74,15 @@ async function generate(...args) {
         let html = fs.readFileSync(componentTemplate + 'html').toString('utf8');
         let js = fs.readFileSync(componentTemplate + 'js').toString('utf8');
         if (schematic === 'component' || schematic === 'template') {
-          html = render(html, templateData);
+          html = nunjucks.renderString(html, templateData);
           fs.writeFileSync(destinationName + 'html', html);
           console.log('-', chalk.yellow('added'), destinationName + 'html');
-          css = render(css, templateData);
+          css = nunjucks.renderString(css, templateData);
           fs.writeFileSync(destinationName + 'css', css);
           console.log('-', chalk.yellow('added'), destinationName + 'css');
         }
         if (schematic === 'component' || schematic === 'controller') {
-          js = render(js, templateData);
+          js = nunjucks.renderString(js, templateData);
           fs.writeFileSync(destinationName + 'js', js);
           console.log('-', chalk.yellow('added'), destinationName + 'js');
         }

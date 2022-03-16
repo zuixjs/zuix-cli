@@ -31,7 +31,7 @@ const stats = {
   error: 0,
   warn: 0
 };
-term.reset().clear();
+//term.reset().clear();
 
 function update(s, ...args) {
   term.restoreCursor(util.format(s, ...args)).eraseLineAfter('\n');

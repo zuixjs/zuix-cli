@@ -25,9 +25,9 @@
  */
 
 const fs = require('fs');
-const path = require("path");
+const path = require('path');
 const http = require('https');
-const extractZip = require("extract-zip");
+const extractZip = require('extract-zip');
 const merge = require('deepmerge');
 const utils = require('../common/utils');
 
