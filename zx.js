@@ -23,7 +23,7 @@
  *  zUIx, Javascript library for component-based development.
  *        https://zuixjs.github.io/zuix
  *
- * @author Generoso Martello <generoso@martello.com>
+ * @author Generoso Martello - G-Labs https://github.com/genielabs
  */
 
 const {program, Argument} = require("commander");
@@ -44,6 +44,7 @@ program
 
 program
     .command('new <project_name>')
+    .option('-t <template_name>', 'Starter template', 'zuix-web-starter')
     .description('Creates a new project')
     .action(newProject);
 

@@ -21,7 +21,7 @@
  *  zUIx, Javascript library for component-based development.
  *        https://zuixjs.github.io/zuix
  *
- * @author Generoso Martello <generoso@martello.com>
+ * @author Generoso Martello - G-Labs https://github.com/genielabs
  */
 
 const fs = require('fs');
@@ -29,65 +29,88 @@ const path = require('path');
 const http = require('https');
 const extractZip = require('extract-zip');
 const merge = require('deepmerge');
-const utils = require('../common/utils');
+const chalk = require('chalk');
+const mkdirp = require('mkdirp');
+const {copyFolder} = require('../common/utils');
 
-function newProject(name) {
-  const folder = name;
-  if (fs.existsSync('package.json') || fs.existsSync('node_modules')) {
-    console.log(utils.chalk.red.bold('Cannot create a new site inside a folder of another project.'));
+function newProject(projectName, templateName) {
+  if (fs.existsSync(projectName)) {
+    console.log(chalk.red.bold('A folder with that name already exists!'));
     return;
   }
-  if (!fs.existsSync(folder)) {
-    utils.mkdirp.sync(folder);
-    console.debug('- %s "%s"', utils.chalk.blue.bold('created folder'), folder);
-    const templateName = 'zuix-web-starter';
-    const templatePath = 'https://codeload.github.com/zuixjs/' + templateName + '/zip/refs/heads/master';
-    const zipFile = path.join(folder, 'web-starter.zip');
-    const file = fs.createWriteStream(zipFile);
-    console.debug('- %s', utils.chalk.blue('downloading web-starter'));
-    http.get(templatePath, function(response) {
-      response.pipe(file);
-      file.on('finish', function() {
-        file.close(async () => {
-          console.log('- %s', utils.chalk.blue('extracting'));
-          await extractZip(zipFile, {dir: path.resolve(folder)}).then(() => {
-            fs.unlinkSync(zipFile);
-            console.log('- %s', utils.chalk.blue('copying files'));
-            const templateFolder = path.join(folder, templateName + '-master');
-            if (!utils.copyFolder(templateFolder, name, () => {
-              fs.rmSync(templateFolder, { recursive: true });
+  if (fs.existsSync('package.json') || fs.existsSync('node_modules')) {
+    console.log(chalk.red.bold('Cannot create a new site inside a folder of another project.'));
+    return;
+  }
+  templateName = templateName.t || 'zuix-web-starter';
+  const releaseUrl = `https://api.github.com/repos/zuixjs/${templateName}/releases/latest`;
+  http.get({
+    protocol: 'https:',
+    hostname: 'api.github.com',
+    path: `/repos/zuixjs/${encodeURI(templateName)}/releases/latest`,
+    headers: { 'User-Agent': 'Mozilla/5.0' }
+  }, function(response) {
+    let data = [];
+    response.on('data', function (chunk) {
+      data.push(chunk);
+    });
+    response.on('end', () => {
+      const releaseInfo = JSON.parse(Buffer.concat(data).toString());
+      mkdirp.sync(projectName);
+      console.debug('- %s "%s"', chalk.blue.bold('created folder'), projectName);
+      downloadAndInstall({
+        protocol: 'https:',
+        hostname: 'codeload.github.com',
+        path: `/zuixjs/${encodeURI(templateName)}/zip/refs/tags/${releaseInfo.name}`,
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      }, projectName, `${templateName}-${releaseInfo.name}`);
+    });
+  });
+}
 
-              // replace project 'name' in config/*.json and packages.json
-              const appConfig = {
-                zuix: {
-                  app: {
-                    title: name,
-                    subtitle: 'A new awesome website!'
-                  }
+function downloadAndInstall(httpOptions, projectName, releaseName) {
+  const zipFile = path.join(projectName, 'web-starter.zip');
+  const file = fs.createWriteStream(zipFile);
+  console.debug('- %s', chalk.blue('downloading web-starter'));
+  http.get(httpOptions, function(response) {
+    response.pipe(file);
+    file.on('finish', function() {
+      file.close(async () => {
+        console.log('- %s', chalk.blue('extracting'));
+        await extractZip(zipFile, {dir: path.resolve(projectName)}).then(() => {
+          fs.unlinkSync(zipFile);
+          console.log('- %s', chalk.blue('copying files'));
+          const templateFolder = path.join(projectName, releaseName);
+          if (!copyFolder(templateFolder, projectName, () => {
+            fs.rmSync(templateFolder, { recursive: true });
+
+            // replace 'projectName' in config/*.json and packages.json
+            const appConfig = {
+              zuix: {
+                app: {
+                  title: projectName,
+                  subtitle: 'A new awesome website!'
                 }
-              };
-              updateConfigFile(path.resolve(name, 'config', 'default.json'), appConfig);
-              updateConfigFile(path.resolve(name, 'config', 'production.json'), appConfig);
-              updateConfigFile(path.resolve(name, 'package.json'), {
-                name, version: '1.0.0', description: appConfig.description
-              }, [ 'keywords', 'author', 'homepage', 'repository', 'bugs' ]);
+              }
+            };
+            updateConfigFile(path.resolve(projectName, 'config', 'default.json'), appConfig);
+            updateConfigFile(path.resolve(projectName, 'config', 'production.json'), appConfig);
+            updateConfigFile(path.resolve(projectName, 'package.json'), {
+              name: projectName, version: '1.0.0', description: appConfig.description
+            }, [ 'keywords', 'author', 'homepage', 'repository', 'bugs' ]);
 
-              console.log('- %s', utils.chalk.blue('installing packages'));
-              npmInstall(name);
-              console.log(utils.chalk.green.bold('Done!'));
-            })) {
-              console.log(utils.chalk.red.bold('Error!'));
-            }
-          });
+            console.log('- %s', chalk.blue('installing packages'));
+            npmInstall(projectName);
+            console.log(chalk.green.bold('Done!'));
+          })) {
+            console.log(chalk.red.bold('Error!'));
+          }
         });
       });
-    }).on('error', function(err) {
-      // TODO: report error
     });
-
-  } else {
-    console.log(utils.chalk.red.bold('A folder with that name already exists!'));
-  }
+  }).on('error', function(err) {
+    // TODO: report error
+  });
 }
 
 function updateConfigFile(configFile, data, deleteKeys) {
