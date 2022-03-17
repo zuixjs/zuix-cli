@@ -28,15 +28,14 @@
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
-const util = require('util');
+const mkdirp = require('mkdirp');
 const request = require('sync-request');
-const stringify = require('json-stringify');
 
 // minifier
 const minify = require('html-minifier').minify;
-const mkdirp = require('mkdirp');
+const UglifyJS = require('uglify-js');
 
-// zuix-bundler cli
+// JS DOM
 const {JSDOM, VirtualConsole} = require('jsdom');
 
 // logging
@@ -82,15 +81,13 @@ function createBundle(content, fileName) {
     const scriptList = dom.window.document.querySelectorAll('script[src]');
     if (scriptList != null) {
       scriptList.forEach(function(el) {
-        if (el.getAttribute('defer') != null) {
+        const resourcePath = el.getAttribute('src');
+        // scripts with 'defer' attribute and zuix[.min].js are excluded from bundle
+        if (el.getAttribute('defer') != null || resourcePath.indexOf('/zuix.') >= 0) {
           return;
         }
-        const resourcePath = el.getAttribute('src');
         let scriptText = fetchResource(resolveResourcePath(fileName, resourcePath), true);
         if (scriptText != null) {
-          // TODO: maybe the '{% raw %}' directive can be deprecated now with 11ty
-          scriptText = '//{% raw %}\n' + scriptText + '\n//{% endraw %}';
-          el.innerHTML = scriptText;
           el.removeAttribute('src');
           zuixBundle.assetList.push({path: resourcePath, content: scriptText, type: 'script'});
         }
@@ -107,8 +104,9 @@ function createBundle(content, fileName) {
         const resourcePath = el.getAttribute('href');
         const cssText = fetchResource(resolveResourcePath(fileName, resourcePath), true);
         if (cssText != null) {
-          // TODO: maybe the '{% raw %}' directive can be deprecated now with 11ty
-          el.outerHTML = '<style>\n/*{% raw %}*/\n' + cssText + '\n/*{% endraw %}*/\n</style>';
+          el.outerHTML = `<style z-ref="${resourcePath}">
+${cssText}
+</style>`;
           zuixBundle.assetList.push({path: resourcePath, content: cssText, type: 'style'});
         }
       });
@@ -172,24 +170,12 @@ function createBundle(content, fileName) {
         if (content != null) {
           const dm = createBundle(content, path.join(options.baseFolder, options.app.resourcePath, filePath + '.html'));
           content = dm.window.document.body.innerHTML;
-// TODO: document `unwrap` mode
-          if (el.getAttribute('data-ui-mode') === 'unwrap') {
-            // TODO: add HTML comment with file info
-            el.outerHTML = content;
-          } else {
-            zuixBundle.viewList.push({path: resourcePath, content: content, element: el});
-          }
+          zuixBundle.viewList.push({path: resourcePath, content: content, element: el});
         }
         // CSS
         content = fetchResource(filePath + '.css');
         if (content != null) {
-          if (el.getAttribute('data-ui-mode') === 'unwrap') {
-            // TODO: add inline // comment with source file info
-            content = util.format('\n<style id="%s">\n%s\n</style>\n', resourcePath, content);
-            dom.window.document.querySelector('head').innerHTML += util.format('\n<!--{[%s]}-->\n%s', resourcePath, content);
-          } else {
-            zuixBundle.styleList.push({path: resourcePath, content: content});
-          }
+          zuixBundle.styleList.push({path: resourcePath, content: content});
         }
       });
     }
@@ -224,6 +210,11 @@ function resolveAppPath(basePath, filePath) {
         const relPath = filePath.substring(filePath.indexOf('/') + 1);
         filePath = url.resolve(libraryPath, relPath);
         if (filePath.startsWith('/')) {
+          let offset = 1;
+          if (filePath.startsWith(options.app.baseUrl)) {
+            offset = options.app.baseUrl.length;
+          }
+          filePath = filePath.substring(offset);
           while (filePath.startsWith('/')) filePath = filePath.substring(1);
           filePath = path.join(basePath, filePath);
         }
@@ -242,7 +233,11 @@ function resolveResourcePath(file, resourcePath) {
   if (!isUrl(resourcePath)) {
     // absolute path
     if (resourcePath.startsWith('/')) {
-      return path.join(options.baseFolder, resourcePath.substring(1));
+      let offset = 1;
+      if (resourcePath.startsWith(options.app.baseUrl)) {
+        offset = options.app.baseUrl.length;
+      }
+      return path.join(options.baseFolder, resourcePath.substring(offset));
     }
     // relative path
     return path.join(path.dirname(path.join(options.baseFolder, file)), resourcePath);
@@ -329,6 +324,20 @@ function getBundleItem(bundle, path) {
   return item;
 }
 
+function addJsBundle(dom, scriptText, bundleFileName) {
+  if (options.build.minify.minifyJS !== false) {
+    const minifyOptions = options.build.minify.minifyJS !== true ? options.build.minify.minifyJS : {};
+    scriptText = UglifyJS.minify({ "script.js": scriptText }, minifyOptions).code;
+  }
+  fs.writeFileSync(bundleFileName, scriptText);
+  bundleFileName = path.basename(bundleFileName);
+  dom.window.document.body.innerHTML += `
+<!-- zUIx.js inline resources bundle -->
+<script src="${bundleFileName}"></script>
+`;
+  tlog.overwrite(' ^G\u2713^: added %s\n', bundleFileName);
+}
+
 function generateApp(content, fileName) {
   // reset bundle
   zuixBundle.viewList.length = 0;
@@ -338,60 +347,85 @@ function generateApp(content, fileName) {
   const dom = createBundle(content, fileName);
   if (dom != null) {
     if (options.build.bundle.zuix !== false) {
-      let bundleViews = '';
+      const resourceBundle = [];
       zuixBundle.viewList.forEach(function(v) {
-        let resourcePath = resolveAppPath('/', v.path);
+        let resourcePath = resolveAppPath(options.app.baseUrl, v.path);
         resourcePath = resourcePath.lib ? resourcePath.path : v.path;
-        const content = util.format('<div z-view="%s">\n%s\n</div>', resourcePath, v.content);
-        bundleViews += util.format('\n<!--{[%s]}-->\n%s', v.path, content);
+        getBundleItem(resourceBundle, resourcePath).view = v.content;
         stats[v.path] = stats[v.path] || {};
         stats[v.path].view = true;
       });
-      const resourceBundle = [];
       zuixBundle.controllerList.forEach(function(s) {
         // TODO: ensure it ends with ';'
-        let resourcePath = resolveAppPath('/', s.path);
+        let resourcePath = resolveAppPath(options.app.baseUrl, s.path);
         resourcePath = resourcePath.lib ? resourcePath.path : s.path;
-        getBundleItem(resourceBundle, resourcePath).controller = s.content;
+        getBundleItem(resourceBundle, resourcePath).controller = s.content.replace(/^\n|\n$/g, '');
         stats[s.path] = stats[s.path] || {};
         stats[s.path].controller = true;
       });
       zuixBundle.styleList.forEach(function(s) {
-        let resourcePath = resolveAppPath('/', s.path);
+        let resourcePath = resolveAppPath(options.app.baseUrl, s.path);
         resourcePath = resourcePath.lib ? resourcePath.path : s.path;
         getBundleItem(resourceBundle, resourcePath).css = s.content;
         stats[s.path] = stats[s.path] || {};
         stats[s.path].css = true;
       });
-      // add style to hide inline views
-      // add inline views
-      if (bundleViews.length > 0) {
-//        const head = dom.window.document.querySelector('head');
-//        head.innerHTML += '    <style>[z-view]:not([z-include]):not([z-load]) { display: none; }</style>\n';
-        dom.window.document.body.innerHTML += '<!-- zUIx.js inline resources bundle -->'
-            + bundleViews;
-      }
-      // add zuix resource bundle (css,js)
-      const json = stringify(resourceBundle, null, 2);
-      if (resourceBundle.length > 0) {
-        const jsonBundle = '\n<script>zuix.bundle(' + json + ')</script>\n';
-        dom.window.document.body.innerHTML += jsonBundle;
-      }
+
+      // Create page bundle for zuix components
+      let zuixComponents = 'zuix.setComponentCache([';
+      resourceBundle.forEach((r, i) => {
+        zuixComponents += `{
+  componentId: "${r.componentId}",
+  controller: (function () {
+    module = {};
+
+    ${r.controller}
+
+    //# sourceURL="${r.componentId}.js"
+    ; return module.exports;
+  })()${r.css ? ',\n    css: ' + JSON.stringify(r.css) : ''}${r.view ? ',\n    view: ' + JSON.stringify(r.view) : ''}
+}`;
+        if (i < resourceBundle.length - 1) {
+          zuixComponents += ',';
+        }
+      });
+      zuixComponents += ']);\n';
+      const bundleFileName = path.join(options.baseFolder, fileName.replace('.html', '.bundle.js'));
+      addJsBundle(dom, zuixComponents, bundleFileName);
     }
+
+    // Create bundle for third-party scripts
+    let vendorScripts = '';
     if (options.build.bundle.js !== false) {
+      zuixBundle.assetList.forEach(function(a) {
+        if (a.type === 'script') {
+          vendorScripts += `
+// -#[ BEGIN inline script z-ref="${a.path}" ]#- //
+(function() {
+${a.content}
+}).call(self ? self : window);
+// -#[ END   inline script z-ref="${a.path}" ]#- //
+            `;
+        }
+      });
+    }
+    if (vendorScripts.length > 0) {
+      const bundleFileName = path.join(options.baseFolder, fileName.replace('.html', '.bundle.ext.js'));
+      addJsBundle(dom, vendorScripts, bundleFileName);
+    }
+
+    if (options.build.bundle.js !== false || options.build.bundle.css !== false) {
       // TODO: report in final summary
       zuixBundle.assetList.forEach(function(a) {
         stats[a.path] = stats[a.path] || {};
-        stats[a.path].script = true;
+        if (a.type === 'script') {
+          stats[a.path].script = true;
+        } else {
+          stats[a.path].style = true;
+        }
       });
     }
-    if (options.build.bundle.css !== false) {
-      // TODO: report in final summary
-      zuixBundle.assetList.forEach(function(a) {
-        stats[a.path] = stats[a.path] || {};
-        stats[a.path].style = true;
-      });
-    }
+
     const processed = zuixBundle.viewList.length > 0 || zuixBundle.styleList.length > 0
     || zuixBundle.controllerList.length > 0 || zuixBundle.assetList.length > 0;
     if (processed) {
@@ -428,7 +462,7 @@ function compilePage(relativeFilePath, outputFile, opts) {
   stats = {};
   hasErrors = false;
   // zUIx bundle
-  tlog.overwrite('^w%s^:', outputFile).br();
+  tlog.overwrite('^C%s^:', outputFile).br();
   if (relativeFilePath.endsWith('.html')) {
     // Generate resources bundle
     tlog.overwrite(' ^r*^: resource bundle');
@@ -467,9 +501,9 @@ function compilePage(relativeFilePath, outputFile, opts) {
   if (content !== initialContent || inputFile !== outputFile) {
     mkdirp.sync(path.dirname(outputFile));
     fs.writeFileSync(outputFile, content);
-    tlog.overwrite(' ^G\u2713^: wrote %s', relativeFilePath);
+    tlog.overwrite(' ^G\u2713^: wrote %s', relativeFilePath).br();
   } else {
-    tlog.overwrite(' ^G=^: skipped (same as input)');
+    tlog.overwrite(' ^G=^: skipped (same as input)').br();
   }
   console.log();
   process.exitCode = tlog.stats().error;
