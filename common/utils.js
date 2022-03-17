@@ -66,7 +66,7 @@ function generateAppConfig(opts) {
     let cfg = `/* eslint-disable quotes */
 (function() {
   zuix.store('config', `;
-    cfg += JSON.stringify(config.app, null, 2).replaceAll('\n', '\n  ');
+    cfg += JSON.stringify(config.app, null, 2).replace(/\n/g, '\n  ');
     cfg += ');\n';
     // WorkBox / Service Worker
     if (config.build.serviceWorker) {
