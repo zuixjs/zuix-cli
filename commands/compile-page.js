@@ -88,7 +88,9 @@ function createBundle(content, fileName) {
         }
         let scriptText = fetchResource(resolveResourcePath(fileName, resourcePath), true);
         if (scriptText != null) {
-          el.removeAttribute('src');
+          const linkRel = dom.window.document.querySelectorAll(`link[rel="preload"][href="${resourcePath}"]`);
+          linkRel.forEach(l => l.remove());
+          el.remove();
           zuixBundle.assetList.push({path: resourcePath, content: scriptText, type: 'script'});
         }
       });
@@ -104,6 +106,8 @@ function createBundle(content, fileName) {
         const resourcePath = el.getAttribute('href');
         const cssText = fetchResource(resolveResourcePath(fileName, resourcePath), true);
         if (cssText != null) {
+          const linkRel = dom.window.document.querySelectorAll(`link[rel="preload"][href="${resourcePath}"]`);
+          linkRel.forEach(l => l.remove());
           el.outerHTML = `<style z-ref="${resourcePath}">
 ${cssText}
 </style>`;
@@ -372,9 +376,10 @@ function generateApp(content, fileName) {
       });
 
       // Create page bundle for zuix components
-      let zuixComponents = 'zuix.setComponentCache([';
-      resourceBundle.forEach((r, i) => {
-        zuixComponents += `{
+      if (resourceBundle.length > 0) {
+        let zuixComponents = 'zuix.setComponentCache([';
+        resourceBundle.forEach((r, i) => {
+          zuixComponents += `{
   componentId: "${r.componentId}",
   controller: (function () {
     module = {};
@@ -385,13 +390,14 @@ function generateApp(content, fileName) {
     ; return module.exports;
   })()${r.css ? ',\n    css: ' + JSON.stringify(r.css) : ''}${r.view ? ',\n    view: ' + JSON.stringify(r.view) : ''}
 }`;
-        if (i < resourceBundle.length - 1) {
-          zuixComponents += ',';
-        }
-      });
-      zuixComponents += ']);\n';
-      const bundleFileName = path.join(options.baseFolder, fileName.replace('.html', '.bundle.js'));
-      addJsBundle(dom, zuixComponents, bundleFileName);
+          if (i < resourceBundle.length - 1) {
+            zuixComponents += ',';
+          }
+        });
+        zuixComponents += ']);\n';
+        const bundleFileName = path.join(options.baseFolder, fileName.replace('.html', '.bundle.js'));
+        addJsBundle(dom, zuixComponents, bundleFileName);
+      }
     }
 
     // Create bundle for third-party scripts
