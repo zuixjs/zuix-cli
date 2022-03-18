@@ -23,7 +23,7 @@
  *  zUIx, Javascript library for component-based development.
  *        https://zuixjs.github.io/zuix
  *
- * @author Generoso Martello - G-Labs https://github.com/genielabs
+ * @author Generoso Martello - https://github.com/genemars
  */
 
 const newProject = require('./commands/new-project');
@@ -32,7 +32,9 @@ const compilePage = require('./commands/compile-page');
 const {
   copyFolder,
   generateServiceWorker,
-  generateAppConfig
+  generateAppConfig,
+  wrapCss,
+  wrapDom
 } = require('./common/utils');
 
 module.exports = {
@@ -41,5 +43,7 @@ module.exports = {
   compilePage,
   copyFolder,
   generateServiceWorker,
-  generateAppConfig
+  generateAppConfig,
+  wrapCss,
+  wrapDom
 }

@@ -23,7 +23,7 @@
  *  zUIx, Javascript library for component-based development.
  *        https://zuixjs.github.io/zuix
  *
- * @author Generoso Martello - G-Labs https://github.com/genielabs
+ * @author Generoso Martello - https://github.com/genemars
  */
 
 const {program, Argument} = require("commander");

@@ -21,7 +21,7 @@
  *  zUIx, Javascript library for component-based development.
  *        https://zuixjs.github.io/zuix
  *
- * @author Generoso Martello - G-Labs https://github.com/genielabs
+ * @author Generoso Martello - https://github.com/genemars
  */
 
 // destination type must match source (dir/dir or file/file)
@@ -32,6 +32,7 @@ const ncp = require('ncp').ncp;
 const chalk = require('chalk');
 const nunjucks = require('nunjucks');
 const workBox = require('workbox-build');
+const {JSDOM} = require('jsdom');
 
 const options = require('./default-config');
 
@@ -143,10 +144,97 @@ function classNameFromHyphens(s) {
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
+function wrapCss(wrapperRule, css, encapsulate) {
+    const wrapReX = /(([a-zA-Z0-9\240-\377=:-_- \n,.@]+.*){([^{}]|((.*){([^}]+)[}]))*})/g;
+    let wrappedCss = '';
+    let ruleMatch;
+    // remove comments
+    css = css.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/g, '');
+    // some more normalization to help with parsing
+    css = css.replace(/(?:\r\n|\r|\n)/g, '').replace(/}/g, '}\n').replace(/\{/g, '{\n');
+    do {
+        ruleMatch = wrapReX.exec(css);
+        if (ruleMatch && ruleMatch.length > 1) {
+            let ruleParts = ruleMatch[2];
+            if (ruleParts != null && ruleParts.length > 0) {
+                ruleParts = ruleParts.replace(/\n/g, '');
+                const classes = ruleParts.split(',');
+                let isMediaQuery = false;
+                classes.forEach(function(v, k) {
+                    // TODO: deprecate the 'single dot' notation
+                    if (v.trim() === '.' || v.trim() === ':host') {
+                        // a single `.` means 'self' (the container itself)
+                        // so we just add the wrapperRule
+                        wrappedCss += '\n[z-component]' + wrapperRule + ' ';
+                    } else if (v.trim()[0] === '@') {
+                        // leave it as is if it's an animation or media rule
+                        wrappedCss += v + ' ';
+                        if (v.trim().toLowerCase().startsWith('@media')) {
+                            isMediaQuery = true;
+                        }
+                    } else if (encapsulate) {
+                        // wrap the class names (v)
+                        v.split(/\s+/).forEach(function(attr) {
+                            attr = attr.trim();
+                            if (attr.lastIndexOf('.') > 0) {
+                                attr.replace(/(?=[.])/gi, ',').split(',').forEach(function(attr2) {
+                                    if (attr2 !== '') {
+                                        wrappedCss += '\n' + attr2 + wrapperRule;
+                                    }
+                                });
+                            } else if (attr !== '' && attr !== '>' && attr !== '*') {
+                                wrappedCss += '\n' + attr + wrapperRule + ' ';
+                            } else {
+                                wrappedCss += attr + ' ';
+                            }
+                        });
+                    } else {
+                        let val = v.trim();
+                        if (val.startsWith(':host')) {
+                            val = val.substring(5);
+                        } else {
+                            val = '\n' + val;
+                        }
+                        wrappedCss += '\n[z-component]' + wrapperRule + val + ' ';
+                    }
+                    if (k < classes.length - 1) {
+                        wrappedCss = wrappedCss.trim() + ', ';
+                    }
+                });
+                if (isMediaQuery) {
+                    const wrappedMediaQuery = wrapCss(wrapperRule, ruleMatch[1].substring(ruleMatch[2].length).replace(/^{([^\0]*?)}$/, '$1'), encapsulate);
+                    wrappedCss += '{\n  '+wrappedMediaQuery+'\n}';
+                } else {
+                    wrappedCss += ruleMatch[1].substring(ruleMatch[2].length) + '\n';
+                }
+            } else {
+                _log.w('wrapCss was unable to parse rule.', ruleParts, ruleMatch);
+            }
+        }
+    } while (ruleMatch);
+    if (wrappedCss !== '') {
+        css = wrappedCss;
+    }
+    return css;
+}
+
+function wrapDom(htmlContent, cssId) {
+    const dom = JSDOM.fragment('<div>'+htmlContent+'</div>');
+    dom.firstChild.firstElementChild.setAttribute('z-component', 'fragment');
+    //dom.firstChild.setAttribute(cssId, 'fragment');
+    const elements = dom.querySelectorAll('*:not([z-load]):not([data-ui-load]):not([z-include]):not([data-ui-include])');
+    elements.forEach((el) => {
+        el.setAttribute(cssId, '');
+    });
+    return dom.firstChild.innerHTML;
+}
+
 module.exports = {
     copyFolder,
     generateAppConfig,
     generateServiceWorker,
     hyphensToCamelCase,
-    classNameFromHyphens
+    classNameFromHyphens,
+    wrapCss,
+    wrapDom
 };
