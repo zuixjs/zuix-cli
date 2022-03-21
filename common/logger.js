@@ -24,18 +24,63 @@
  * @author Generoso Martello - https://github.com/genemars
  */
 
-const term = require('terminal-kit').terminal;
+const consoleControl = require('console-control-strings');
 const util = require('util');
 const stats = {
   info: 0,
   error: 0,
   warn: 0
 };
-//term.reset().clear();
 
-function update(s, ...args) {
-  term.restoreCursor(util.format(s, ...args)).eraseLineAfter('\n');
-  return this;
+const term = {};
+term.eraseLine = () => {
+  //term.previousLine();
+  process.stdout.write(consoleControl.eraseLine());
+  return term;
+};
+term.previousLine = () => {
+  process.stdout.write(consoleControl.previousLine());
+  return term;
+};
+term.bgDefaultColor = (s) => {
+  process.stdout.write(consoleControl.color('reset') + (s ? s : ''));
+  return term;
+};
+term.defaultColor = (s) => {
+  process.stdout.write(consoleControl.color('reset') + (s ? s : ''));
+  return term;
+};
+term.bgBrightGreen = (s) => {
+  process.stdout.write(consoleControl.color('bgBrightGreen') + (s ? s : ''));
+  return term;
+};
+term.bgYellow = (s) => {
+  process.stdout.write(consoleControl.color('bgYellow') + (s ? s : ''));
+  return term;
+};
+term.bgBrightRed = (s) => {
+  process.stdout.write(consoleControl.color('bgBrightRed') + (s ? s : ''));
+  return term;
+};
+term.white = (s) => {
+  process.stdout.write(consoleControl.color('white') + (s ? s : ''));
+  return term;
+};
+term.black = (s) => {
+  process.stdout.write(consoleControl.color('black') + (s ? s : ''));
+  return term;
+};
+term.green = (s) => {
+  process.stdout.write(consoleControl.color('green') + (s ? s + consoleControl.color('reset') : ''));
+  return term;
+};
+term.red = (s) => {
+  process.stdout.write(consoleControl.color('red') + (s ? s + consoleControl.color('reset') : ''));
+  return term;
+};
+term.reset = () => {
+  process.stdout.write(consoleControl.color('reset') + (s ? s : ''));
+  return term;
 }
 
 function overwrite(s, ...args) {
@@ -48,14 +93,14 @@ function overwrite(s, ...args) {
 
 function br(s, ...args) {
   if (s == null) s = '';
-  term.bgDefaultColor('\n').defaultColor('             ^#^k^W|^: ').saveCursor(util.format(s, ...args));
+  term.bgDefaultColor('\n').defaultColor('             | ' + util.format(s, ...args));
   return this;
 }
 
 function info(s, ...args) {
   if (s == null) s = '';
   t().bgBrightGreen().black('I')
-    .bgDefaultColor().defaultColor(' ').saveCursor(util.format(s, ...args));
+    .bgDefaultColor().defaultColor(' ' + util.format(s, ...args));
   stats.info++;
   return this;
 }
@@ -63,7 +108,7 @@ function info(s, ...args) {
 function warn(s, ...args) {
   if (s == null) s = '';
   t().bgYellow().black('W')
-    .bgDefaultColor().defaultColor(' ').saveCursor(util.format(s, ...args));
+    .bgDefaultColor().defaultColor(' ' + util.format(s, ...args));
   stats.warn++;
   return this;
 }
@@ -71,7 +116,7 @@ function warn(s, ...args) {
 function error(s, ...args) {
   if (s == null) s = '';
   t().bgBrightRed().white('E')
-    .bgDefaultColor().defaultColor(' ').saveCursor(util.format(s, ...args));
+    .bgDefaultColor().defaultColor(' ' + util.format(s, ...args));
   stats.error++;
   return this;
 }
@@ -100,7 +145,10 @@ module.exports = {
   info: info,
   error: error,
   warn: warn,
-  update: update,
+  color: consoleControl.color,
+  red: term.red,
+  green: term.green,
+  //update: update,
   overwrite: overwrite,
   br: br,
   stats: function() {

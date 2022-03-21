@@ -255,7 +255,7 @@ function isUrl(path) {
 
 function fetchResource(resourcePath, reportError) {
   let content = null;
-  const error = '   ^#^R^W[%s]^:';
+  const error = '   [%s]';
   if (isUrl(resourcePath)) {
     if (resourcePath.startsWith('//')) {
       resourcePath = 'https:' + resourcePath;
@@ -263,11 +263,11 @@ function fetchResource(resourcePath, reportError) {
     const parsedUrl = url.parse(resourcePath);
     let cachePath = path.join('.zuix', 'cache', parsedUrl.hostname, parsedUrl.path);
     if (fs.existsSync(cachePath)) {
-      tlog.overwrite('   ^C%s^: cached "%s"', tlog.busyCursor(), resourcePath);
+      tlog.overwrite('   %s cached "%s"', tlog.busyCursor(), resourcePath);
       content = fs.readFileSync(cachePath).toString('utf8');
       tlog.overwrite('');
     } else {
-      tlog.overwrite('   ^C%s^: downloading "%s"', tlog.busyCursor(), resourcePath);
+      tlog.overwrite('   %s downloading "%s"', tlog.busyCursor(), resourcePath);
       const res = request('GET', resourcePath);
       if (res.statusCode === 200) {
         content = res.getBody('utf8');
@@ -282,7 +282,7 @@ function fetchResource(resourcePath, reportError) {
       }
     }
   } else {
-    tlog.overwrite('   ^C%s^: reading "%s"', tlog.busyCursor(), resourcePath);
+    tlog.overwrite('   %s reading "%s"', tlog.busyCursor(), resourcePath);
     try {
       content = fs.readFileSync(resourcePath).toString();
       tlog.overwrite('');
@@ -339,7 +339,7 @@ function addJsBundle(dom, scriptText, bundleFileName) {
 <!-- zUIx.js inline resources bundle -->
 <script src="${bundleFileName}"></script>
 `;
-  tlog.overwrite(' ^G\u2713^: added %s\n', bundleFileName);
+  tlog.overwrite(' \u2713 added %s\n', bundleFileName);
 }
 
 function generateApp(content, fileName) {
@@ -444,8 +444,8 @@ ${a.content}
 function compilePage(relativeFilePath, outputFile, opts) {
   Object.assign(options, opts);
   const inputFile = path.join(options.baseFolder, relativeFilePath);
-  tlog.overwrite('   ^C%s^: reading "%s"', tlog.busyCursor(), inputFile);
-  const error = '   ^#^R^W[%s]^:';
+  tlog.overwrite('   %s reading "%s"', tlog.busyCursor(), inputFile);
+  const error = '   [%s]';
   let content;
   try {
     content = fs.readFileSync(inputFile).toString();
@@ -468,25 +468,27 @@ function compilePage(relativeFilePath, outputFile, opts) {
   stats = {};
   hasErrors = false;
   // zUIx bundle
-  tlog.overwrite('^C%s^:', outputFile).br();
+  tlog.overwrite('%s', outputFile).br();
   if (relativeFilePath.endsWith('.html')) {
     // Generate resources bundle
-    tlog.overwrite(' ^r*^: resource bundle');
+    tlog.overwrite(' * resource bundle');
     content = generateApp(content, outputFile);
     if (Object.keys(stats).length > 0) {
       if (!hasErrors) {
-        tlog.overwrite(' ^G\u2713^: resource bundle');
+        tlog.overwrite(' \u2713 resource bundle');
+      } else {
+        tlog.overwrite(' ' + tlog.color('red') + 'x' + tlog.color('reset') + ' resource bundle');
       }
       // output stats
       for (const key in stats) {
         const s = stats[key];
-        const ok = '^+^g';
-        const ko = '^w';
-        tlog.info('   ^w[^:%s^:%s^:%s^:^w]^: %s',
-          s.view ? ok + 'v' : ko + '-',
-          s.css ? ok + 's' : ko + '-',
-          s.controller ? ok + 'c' : ko + '-',
-          '^:' + key
+        const ok = tlog.color('green');
+        const ko = tlog.color('white');
+        tlog.info('   [%s%s%s] %s',
+            (s.view ? ok + 'v' : ko + '-') + tlog.color('reset'),
+            (s.css ? ok + 's' : ko + '-') + tlog.color('reset'),
+            (s.controller ? ok + 'c' : ko + '-') + tlog.color('reset'),
+          '' + key
         );
       }
       tlog.info();
@@ -494,9 +496,9 @@ function compilePage(relativeFilePath, outputFile, opts) {
       //tlog.overwrite();
     }
     if (options.build.minify != null && options.build.minify !== false && options.build.minify.disable !== true) {
-      tlog.overwrite(' ^r*^: minify');
+      tlog.overwrite(' * minify');
       content = minify(content, options.build.minify);
-      tlog.overwrite(' ^G\u2713^: minify').br();
+      tlog.overwrite(' \u2713 minify').br();
       //tlog.info();
     }
   } else {
@@ -507,9 +509,9 @@ function compilePage(relativeFilePath, outputFile, opts) {
   if (content !== initialContent || inputFile !== outputFile) {
     mkdirp.sync(path.dirname(outputFile));
     fs.writeFileSync(outputFile, content);
-    tlog.overwrite(' ^G\u2713^: wrote %s', relativeFilePath).br();
+    tlog.overwrite(' \u2713 wrote %s', relativeFilePath).br();
   } else {
-    tlog.overwrite(' ^G=^: skipped (same as input)').br();
+    tlog.overwrite(' = skipped (same as input)').br();
   }
   console.log();
   process.exitCode = tlog.stats().error;
