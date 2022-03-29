@@ -11,6 +11,7 @@ module.exports = {
             css: false,
             zuix: false
         },
+        mirror: false, // 'script,style,img,source,audio',
         serviceWorker: false,
         minify: {
             disable: true,
@@ -28,8 +29,8 @@ module.exports = {
         }
     },
     app: {
-        baseUrl: "/",
-        resourcePath: "{{ app.baseUrl }}app/", // where to load components/fragments from
+        baseUrl: '/',
+        resourcePath: '{{ app.baseUrl }}app/', // where to load components/fragments from
         libraryPath: {
             '@lib': 'https://zuixjs.github.io/zkit/lib/1.1/',
             '@cdnjs': 'https://cdnjs.cloudflare.com/ajax/libs/'

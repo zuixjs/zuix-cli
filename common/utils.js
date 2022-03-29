@@ -33,8 +33,10 @@ const chalk = require('chalk');
 const nunjucks = require('nunjucks');
 const workBox = require('workbox-build');
 const {JSDOM} = require('jsdom');
+const fetch = require('sync-fetch');
 
 const options = require('./default-config');
+const url = require("url");
 
 function copyFolder(source, destination, done) {
     // ncp.limit = 16;
@@ -229,6 +231,45 @@ function wrapDom(htmlContent, cssId) {
     return dom.firstChild.innerHTML;
 }
 
+function fetchAndCache(resourcePath, destinationFolder, callback) {
+    let content;
+    if (resourcePath.startsWith('//')) {
+        resourcePath = 'https:' + resourcePath;
+    }
+    const parsedUrl = url.parse(resourcePath);
+    let cachedPath = path.join(destinationFolder, parsedUrl.hostname, parsedUrl.path.replace('?', '!'));
+    if (fs.existsSync(cachedPath)) {
+        content = fs.readFileSync(cachedPath).toString('utf8');
+        if (callback && typeof callback.onFileCached === 'function') {
+            callback.onFileCached(resourcePath);
+        }
+    } else {
+        if (callback && typeof callback.onFileDownload === 'function') {
+            callback.onFileDownload(resourcePath, cachedPath);
+        }
+        const res = fetch(resourcePath);
+        if (res.status === 200) {
+            content = res.buffer();
+            // cache the downloaded file
+            mkdirp.sync(path.dirname(cachedPath));
+            fs.writeFileSync(cachedPath, content);
+            if (callback && typeof callback.onFileSaved === 'function') {
+                callback.onFileSaved(resourcePath, cachedPath);
+            }
+        } else  {
+            content = null;
+            if (callback && typeof callback.onError === 'function') {
+                callback.onError(resourcePath, cachedPath);
+            }
+        }
+    }
+    return {content, cachedPath};
+}
+
+function isRemoteUrl(path) {
+    return path && (path.indexOf('://') > 0 || path.startsWith('//'));
+}
+
 module.exports = {
     copyFolder,
     generateAppConfig,
@@ -236,5 +277,7 @@ module.exports = {
     hyphensToCamelCase,
     classNameFromHyphens,
     wrapCss,
-    wrapDom
+    wrapDom,
+    fetchAndCache,
+    isRemoteUrl
 };

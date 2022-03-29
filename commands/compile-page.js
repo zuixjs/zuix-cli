@@ -29,7 +29,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const mkdirp = require('mkdirp');
-const request = require('sync-request');
+const {isRemoteUrl, fetchAndCache} = require('../common/utils');
 
 // minifier
 const minify = require('html-minifier').minify;
@@ -189,7 +189,7 @@ ${cssText}
 
 function resolveAppPath(basePath, filePath) {
   let isLibraryPath = false;
-  if (!isUrl(filePath)) {
+  if (!isRemoteUrl(filePath)) {
     const config = options.app;
     if (filePath[0] === '@') {
       let libraryPath = LIBRARY_PATH_DEFAULT;
@@ -234,7 +234,7 @@ function resolveAppPath(basePath, filePath) {
 }
 
 function resolveResourcePath(file, resourcePath) {
-  if (!isUrl(resourcePath)) {
+  if (!isRemoteUrl(resourcePath)) {
     // absolute path
     if (resourcePath.startsWith('/')) {
       let offset = 1;
@@ -249,38 +249,31 @@ function resolveResourcePath(file, resourcePath) {
   return resourcePath;
 }
 
-function isUrl(path) {
-  return path.indexOf('://') > 0 || path.startsWith('//');
-}
-
 function fetchResource(resourcePath, reportError) {
   let content = null;
   const error = '   [%s]';
-  if (isUrl(resourcePath)) {
+  if (isRemoteUrl(resourcePath)) {
     if (resourcePath.startsWith('//')) {
       resourcePath = 'https:' + resourcePath;
     }
-    const parsedUrl = url.parse(resourcePath);
-    let cachePath = path.join('.zuix', 'cache', parsedUrl.hostname, parsedUrl.path);
-    if (fs.existsSync(cachePath)) {
-      tlog.overwrite('   %s cached "%s"', tlog.busyCursor(), resourcePath);
-      content = fs.readFileSync(cachePath).toString('utf8');
-      tlog.overwrite('');
-    } else {
-      tlog.overwrite('   %s downloading "%s"', tlog.busyCursor(), resourcePath);
-      const res = request('GET', resourcePath);
-      if (res.statusCode === 200) {
-        content = res.getBody('utf8');
-        // cache the downloaded file
-        mkdirp.sync(path.dirname(cachePath));
-        fs.writeFileSync(cachePath, content, { encoding: 'utf8'});
+    const cachedFile = fetchAndCache(resourcePath, path.join('.zuix', 'cache'), {
+      onFileCached: (res, cached) => {
+        tlog.overwrite('   %s cached "%s"', tlog.busyCursor(), res);
         tlog.overwrite('');
-      } else if (reportError) {
-        hasErrors = true;
+      },
+      onFileDownload: (res, cached) => {
+        tlog.overwrite('   %s downloading "%s"', tlog.busyCursor(), res);
+      },
+      onFileSaved: (res, cached) => {
+        tlog.overwrite('');
+      },
+      onError: (res, cached) => {
         tlog.term.previousLine();
-        tlog.error(error + ' %s', res.statusCode, resourcePath).br();
+        tlog.error(error + ' %s', res.status, resourcePath).br();
       }
-    }
+    });
+    content = cachedFile.content;
+    hasErrors = (content == null);
   } else {
     tlog.overwrite('   %s reading "%s"', tlog.busyCursor(), resourcePath);
     try {
@@ -295,6 +288,67 @@ function fetchResource(resourcePath, reportError) {
     }
   }
   return content;
+}
+
+function remoteAssetsMirror(dom, buildFolder, baseUrl, elementSelector) {
+  const mirroredElements = [];
+  const explicitMirrorAttribute = 'z-mirror';
+  const defaultMirrorFolder = path.join(buildFolder, 'assets', 'mirror');
+  const getRemoteAsset = (url, mirrorFolder) => {
+    return fetchAndCache(url, mirrorFolder, {
+      onFileCached: (res, cached) => {
+        tlog.overwrite('   * cached asset "%s"', res).br();
+        //tlog.overwrite('');
+      },
+      onFileDownload: (res, cached) => {
+        tlog.overwrite('   %s downloading "%s"', tlog.busyCursor(), res);
+      },
+      onFileSaved: (res, cached) => {
+        tlog.overwrite('   * saved asset "%s"', res).br();
+      },
+      onError: (res, cached) => {
+        tlog.term.previousLine();
+        tlog.error('   [%s] %s', res.status, url).br();
+      }
+    });
+  }
+  const nodeList = dom.window.document
+      .querySelectorAll(`[${explicitMirrorAttribute}]${elementSelector ? ',' + elementSelector : ''}`);
+  if (nodeList != null) {
+    nodeList.forEach(function(el) {
+      let localResourcePath = false;
+      let resourcePath = '';
+      let targetAttribute = el.getAttribute(explicitMirrorAttribute);
+      if (targetAttribute) {
+        resourcePath = el[targetAttribute];
+      } else {
+        const checkAttributes = ['href', 'src', 'srcset'];
+        for (let a = 0; a < checkAttributes.length; a++) {
+          const attr = checkAttributes[a];
+          if (el.hasAttribute(attr)) {
+            resourcePath = el[attr];
+            targetAttribute = attr;
+            break;
+          }
+        }
+      }
+      if (isRemoteUrl(resourcePath)) {
+        const cachedFile = getRemoteAsset(resourcePath, defaultMirrorFolder);
+        if (cachedFile.content != null) {
+          localResourcePath = cachedFile.cachedPath;
+        }
+      }
+      // replace attribute value with local mirrored resource url
+      if (localResourcePath) {
+        localResourcePath = localResourcePath.substring(buildFolder.length + 1);
+        localResourcePath = path.join(baseUrl, localResourcePath);
+        el.setAttribute(targetAttribute, localResourcePath);
+        el.removeAttribute(explicitMirrorAttribute);
+        mirroredElements.push(el);
+      }
+    });
+  }
+  return mirroredElements;
 }
 
 function isBundled(list, path) {
@@ -350,6 +404,18 @@ function generateApp(content, fileName) {
   zuixBundle.assetList.length = 0;
   const dom = createBundle(content, fileName);
   if (dom != null) {
+    // copy/cache remote images and other assets updating element reference to local url
+    let mirroredElements = [];
+    if (options.build.mirror) {
+      let implicitSelector = null;
+      if (Array.isArray(options.build.mirror)) {
+        implicitSelector = options.build.mirror.join(',');
+      } if (typeof options.build.mirror === 'string') {
+        implicitSelector = options.build.mirror;
+      }
+      mirroredElements = remoteAssetsMirror(dom, options.build.output, options.app.baseUrl, implicitSelector);
+    }
+    // collect bundle items
     if (options.build.bundle.zuix !== false) {
       const resourceBundle = [];
       zuixBundle.viewList.forEach(function(v) {
@@ -433,7 +499,8 @@ ${a.content}
     }
 
     const processed = zuixBundle.viewList.length > 0 || zuixBundle.styleList.length > 0
-    || zuixBundle.controllerList.length > 0 || zuixBundle.assetList.length > 0;
+    || zuixBundle.controllerList.length > 0 || zuixBundle.assetList.length > 0
+    || mirroredElements.length > 0;
     if (processed) {
       content = dom.unwrap ? dom.window.document.body.innerHTML : dom.serialize();
     }
