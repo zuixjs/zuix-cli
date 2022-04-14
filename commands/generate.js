@@ -28,9 +28,13 @@ const {classNameFromHyphens} = require('../common/utils');
 const chalk = require('chalk');
 const mkdirp = require('mkdirp');
 const nunjucks = require('nunjucks');
-const highlight = require('cli-highlight');
+const {highlight} = require('cli-highlight');
 const fs = require('fs');
 const path = require('path');
+
+const config = require('config');
+let zuixConfig = config.get('zuix');
+const sourceFolder = zuixConfig.get('build.input');
 
 let cutHereMark = '';
 for (let i = 0; i < 5 ; i++) {
@@ -55,8 +59,7 @@ async function generate(...args) {
       );
       // check first if already exists
       const componentId = `${schematic}s/${template}`;
-      // TODO: read "./source/app/" from `./config/default-production.json`
-      const destinationName = `./source/app/${componentId}.`;
+      const destinationName = path.join(sourceFolder, 'app', `${componentId}.`);
       if (fs.existsSync(destinationName + 'js') || fs.existsSync(destinationName + 'css') || fs.existsSync(destinationName + 'html')) {
         console.error(
             chalk.red.bold('A file with that name already exists.')
@@ -88,9 +91,11 @@ async function generate(...args) {
         }
         console.log('\nNEW componentId:', chalk.green.bold(componentId));
         const type = schematic === 'controller' ? 'ctrl ' : schematic === 'template' ? 'view ' : '';
+        const htmlCode = `<div ${type}z-load="${componentId}"></div>`;
         console.log(cutHereMark);
-        console.log(highlight(`<div ${type}z-load="${componentId}"></div>`, { language: 'html' }));
+        console.log(highlight(htmlCode, { language: 'html' }));
         console.log(cutHereMark + '\n');
+        return Promise.resolve({componentId, path: destinationName + '*', html: htmlCode});
       }
       break;
     default:

@@ -1,6 +1,6 @@
 {
   "name": "zuix",
-  "version": "0.4.0-beta.7",
+  "version": "0.4.0-beta.8",
   "description": "zUIx.js command line tool",
   "bin": {
     "zuix": "zuix.js"
@@ -22,6 +22,7 @@
     "chalk": "^4.1.2",
     "cli-highlight": "^2.1.11",
     "commander": "^9.0.0",
+    "config": "^3.3.7",
     "console-control-strings": "^1.1.0",
     "deepmerge": "^4.2.2",
     "extract-zip": "^2.0.1",
