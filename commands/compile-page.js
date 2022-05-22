@@ -257,17 +257,17 @@ function processLoadedFromCode(scriptText) {
   while ((result = reg.exec(scriptText)) !== null) {
     const args = getArguments(scriptText.substring(result.index));
     const type = args[0];
-    const path = args[1];
-    if (path) {
+    const usingPath = args[1];
+    if (usingPath) {
       if (type === 'component') {
-        const resourcePath = resolveAppPath('', path, '.').path;
+        const resourcePath = resolveAppPath('', usingPath, '.').path;
         if (!isBundled(zuixBundle.controllerList, resourcePath)) {
           const content = fetchResource(isRemoteUrl(resourcePath) ? resourcePath + '.js' : path.join(options.build.input, resourcePath + '.js'), true);
           zuixBundle.controllerList.push({path: resourcePath, content});
           processLoadedFromCode(content);
         }
       } else {
-        const resourcePath = resolveAppPath('', path, '.').path;
+        const resourcePath = resolveAppPath('', usingPath, '.').path;
         const content = fetchResource(isRemoteUrl(resourcePath) ? resourcePath : path.join(options.build.input, resourcePath), true);
         if (content) {
           zuixBundle.usingList.push({path: resourcePath, content, type});
