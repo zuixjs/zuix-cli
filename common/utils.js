@@ -161,7 +161,7 @@ function wrapCss(wrapperRule, css, encapsulate) {
             if (ruleParts != null && ruleParts.length > 0) {
                 ruleParts = ruleParts.replace(/\n/g, '');
                 const classes = ruleParts.split(',');
-                let isMediaQuery = false;
+                let isAtRule = false;
                 classes.forEach(function(v, k) {
                     // TODO: deprecate the 'single dot' notation
                     if (v.trim() === '.' || v.trim() === ':host') {
@@ -171,18 +171,16 @@ function wrapCss(wrapperRule, css, encapsulate) {
                     } else if (v.trim()[0] === '@') {
                         // leave it as is if it's an animation or media rule
                         wrappedCss += v + ' ';
-                        if (v.trim().toLowerCase().startsWith('@media')) {
-                            isMediaQuery = true;
+                        if (v.trim().toLowerCase().startsWith('@media') || v.trim().toLowerCase().startsWith('@supports')) {
+                            isAtRule = true;
                         }
                     } else if (encapsulate) {
                         // wrap the class names (v)
                         v.split(/\s+/).forEach(function(attr) {
                             attr = attr.trim();
                             if (attr.lastIndexOf('.') > 0) {
-                                attr.replace(/(?=[.])/gi, ',').split(',').forEach(function(attr2) {
-                                    if (attr2 !== '') {
-                                        wrappedCss += '\n' + attr2 + wrapperRule;
-                                    }
+                                attr.replace(/(?=\.)(?![^\[\]()]*(?:\[[^\[\]()]*([\])]))?([\])]))/gi, ',').split(',').forEach(function(attr2) {
+                                    wrappedCss += attr2 !== '' ? attr2 + wrapperRule : '\n';
                                 });
                             } else if (attr !== '' && attr !== '>' && attr !== '*') {
                                 wrappedCss += '\n' + attr + wrapperRule + ' ';
@@ -203,14 +201,14 @@ function wrapCss(wrapperRule, css, encapsulate) {
                         wrappedCss = wrappedCss.trim() + ', ';
                     }
                 });
-                if (isMediaQuery) {
-                    const wrappedMediaQuery = wrapCss(wrapperRule, ruleMatch[1].substring(ruleMatch[2].length).replace(/^{([^\0]*?)}$/, '$1'), encapsulate);
-                    wrappedCss += '{\n  '+wrappedMediaQuery+'\n}';
+                if (isAtRule) {
+                    const wrappedAtRule = z$.wrapCss(wrapperRule, ruleMatch[1].substring(ruleMatch[2].length).replace(/^{([^\0]*?)}$/, '$1'), encapsulate);
+                    wrappedCss += '{\n  ' + wrappedAtRule + '\n}\n';
                 } else {
                     wrappedCss += ruleMatch[1].substring(ruleMatch[2].length) + '\n';
                 }
             } else {
-                _log.w('wrapCss was unable to parse rule.', ruleParts, ruleMatch);
+                console.warn(chalk.white.bold('wrapCss was unable to parse rule.'), ruleParts, ruleMatch);
             }
         }
     } while (ruleMatch);
@@ -229,6 +227,26 @@ function wrapDom(htmlContent, cssId) {
         el.setAttribute(cssId, '');
     });
     return dom.firstChild.innerHTML;
+}
+
+function normalizeControllerCode(javascriptCode) {
+    if (javascriptCode.indexOf('module.exports') >= 0) {
+        return '\'use strict\'; let module = {}; ' + javascriptCode + ';\nreturn module.exports;';
+    } else {
+        // TODO: improve code parsing
+        let code = javascriptCode;
+        const fni = javascriptCode.indexOf('function ');
+        const fnz = javascriptCode.indexOf('zuix.controller');
+        const fnc = javascriptCode.indexOf('class ');
+        if (fnc > 0 && (fnc < fni || fni === -1) && (fnc < fnz || fnz === -1)) {
+            code = javascriptCode.substring(0, fnc) + 'return ' + javascriptCode.substring(fnc);
+        } else if (fni > 0 && (fni < fnz || fnz === -1)) {
+            code = javascriptCode.substring(0, fni) + 'return ' + javascriptCode.substring(fni);
+        } else if (fnz !== -1) {
+            code = javascriptCode.substring(0, fnz) + 'return ' + javascriptCode.substring(fnz + 15);
+        }
+        return code;
+    }
 }
 
 function fetchAndCache(resourcePath, destinationFolder, callback) {
@@ -270,6 +288,18 @@ function isRemoteUrl(path) {
     return path && (path.indexOf('://') > 0 || path.startsWith('//'));
 }
 
+// String.hashCode extension
+String.prototype.hashCode = function() {
+    let hash = 0;
+    if (this.length === 0) return hash;
+    for (let i = 0; i < this.length; i++) {
+        const chr = this.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
+
 module.exports = {
     copyFolder,
     generateAppConfig,
@@ -279,5 +309,6 @@ module.exports = {
     wrapCss,
     wrapDom,
     fetchAndCache,
-    isRemoteUrl
+    isRemoteUrl,
+    normalizeControllerCode
 };
