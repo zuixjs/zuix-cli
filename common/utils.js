@@ -135,10 +135,10 @@ function generateServiceWorker(opts) {
     });
 }
 function hyphensToCamelCase(s) {
-    return s.replace(/-([a-z0-9_$-])/g, function (g) {
+    return s.replace(/--/g, ':').replace(/-([a-z0-9_$-])/g, function(g) {
         return '_$-'.indexOf(g[1]) > -1 || (+g[1]).toString() === g[1] ?
             '_' + g[1].replace('-', '_') : g[1].toUpperCase();
-    });
+    }).replace(/:/g, '-');
 }
 function classNameFromHyphens(s) {
     const baseName = path.basename(s + '.js', '.js');
@@ -274,6 +274,7 @@ function fetchAndCache(resourcePath, destinationFolder, callback) {
             if (callback && typeof callback.onFileSaved === 'function') {
                 callback.onFileSaved(resourcePath, cachedPath);
             }
+            content = content.toString('utf8');
         } else  {
             content = null;
             if (callback && typeof callback.onError === 'function') {
