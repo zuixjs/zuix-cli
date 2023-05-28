@@ -51,6 +51,9 @@ const zuixBundle = {
 let stats;
 let hasErrors;
 
+let loadTypeGuessCache = {};
+let compilePageEndTs = 0;
+
 const LIBRARY_PATH_DEFAULT = 'https://zuixjs.github.io/zkit/lib/1.1';
 const options = require('../common/default-config');
 
@@ -69,8 +72,12 @@ function createBundle(content, fileName) {
     if (scriptList != null) {
       scriptList.forEach(function(el) {
         const resourcePath = el.getAttribute('src');
-        // scripts with 'defer' attribute and zuix[.min].js are excluded from bundle
-        if (el.getAttribute('defer') != null || resourcePath.indexOf('/zuix.') >= 0) {
+        // scripts with 'bundle="false"|async|defer' attribute and zuix[.min].js are excluded from bundle
+        if (el.getAttribute('bundle') === "false" ||
+            (el.getAttribute('bundle') !== "true"
+                && (el.getAttribute('async') != null || el.getAttribute('defer') != null || resourcePath.indexOf('/zuix.') >= 0)
+            )
+        ) {
           return;
         }
         let scriptText = fetchResource(resolveResourcePath(fileName, resourcePath), true);
@@ -200,25 +207,40 @@ function processLoadedFromCode(scriptText) {
   let reg = /zuix.load\s*\(([^\)]+)\)/g;
   let result;
   while ((result = reg.exec(scriptText)) !== null) {
-    // TODO: it's not possible at this time to determine loading options,
-    //       unless an explicit declaration method is implemented,
-    //       so we try loading all of 3 files anyway (js + html + css)
+    // It's not possible to determine loading options in this case,
+    // so we try loading all of 3 files anyway (js + html + css)
+    // `loadTypeGuessCache` will store last guess and prevent from
+    // trying loading again non-existent files when another page
+    // is compiled during the current build session.
     const args = getArguments(scriptText.substring(result.index));
     const path = args[0];
     if (path) {
       const filePath = resolveAppPath(options.baseFolder, path).path;
-      let content = fetchResource(filePath + '.js', false);
-      if (content) {
-        zuixBundle.controllerList.push({path, content});
-        processLoadedFromCode(content);
+      let content;
+      if (!loadTypeGuessCache[filePath + '.js']) {
+        content = fetchResource(filePath + '.js', false);
+        if (content) {
+          zuixBundle.controllerList.push({path, content});
+          processLoadedFromCode(content);
+        } else {
+          loadTypeGuessCache[filePath + '.js'] = true;
+        }
       }
-      content = fetchResource(filePath + '.html', false);
-      if (content) {
-        zuixBundle.viewList.push({path, content});
+      if (!loadTypeGuessCache[filePath + '.html']) {
+        content = fetchResource(filePath + '.html', false);
+        if (content) {
+          zuixBundle.viewList.push({path, content});
+        } else {
+          loadTypeGuessCache[filePath + '.html'] = true;
+        }
       }
-      content = fetchResource(filePath + '.css', false);
-      if (content) {
-        zuixBundle.styleList.push({path, content});
+      if (!loadTypeGuessCache[filePath + '.css']) {
+        content = fetchResource(filePath + '.css', false);
+        if (content) {
+          zuixBundle.styleList.push({path, content});
+        } else {
+          loadTypeGuessCache[filePath + '.css'] = true;
+        }
       }
     }
   }
@@ -622,6 +644,10 @@ ${a.content}
 }
 
 function compilePage(relativeFilePath, outputFile, opts) {
+  if (compilePageEndTs - new Date().getTime() > 1000) {
+    // auto-reset type-load cache
+    loadTypeGuessCache = {};
+  }
   Object.assign(options, opts);
   const inputFile = path.join(options.baseFolder, relativeFilePath);
   tlog.overwrite('   %s reading "%s"', tlog.busyCursor(), inputFile);
@@ -694,6 +720,7 @@ function compilePage(relativeFilePath, outputFile, opts) {
     tlog.overwrite(' = skipped (same as input)').br();
   }
   console.log();
+  compilePageEndTs = new Date().getTime();
   process.exitCode = tlog.stats().error;
   return process.exitCode;
 }
