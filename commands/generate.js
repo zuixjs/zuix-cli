@@ -33,8 +33,6 @@ const fs = require('fs');
 const path = require('path');
 
 const config = require('config');
-let zuixConfig = config.get('zuix');
-const sourceFolder = zuixConfig.get('build.input');
 
 let cutHereMark = '';
 for (let i = 0; i < 5 ; i++) {
@@ -42,6 +40,8 @@ for (let i = 0; i < 5 ; i++) {
 }
 
 async function generate(...args) {
+  const zuixConfig = config.get('zuix');
+  const sourceFolder = zuixConfig.get('build.input');
   return new Promise((resolve, reject) => {
     let template;
     let schematic = args[0];
