@@ -1,6 +1,6 @@
 {
   "name": "zuix",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "zUIx.js command line tool",
   "bin": {
     "zuix": "zuix.js"
@@ -21,19 +21,19 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "cli-highlight": "^2.1.11",
-    "commander": "^9.0.0",
-    "config": "^3.3.7",
+    "commander": "^13.1.0",
+    "config": "^3.3.12",
     "console-control-strings": "^1.1.0",
-    "deepmerge": "^4.2.2",
+    "deepmerge": "^4.3.1",
     "extract-zip": "^2.0.1",
-    "html-minifier": "^4.0.0",
-    "jsdom": "^19.0.0",
+    "html-minifier-terser": "^7.2.0",
+    "jsdom": "^26.0.0",
     "json-stringify": "^1.0.0",
-    "mkdirp": "^1.0.4",
+    "mkdirp": "^3.0.1",
     "ncp": "^2.0.0",
     "nunjucks": "^3.2.3",
     "sync-fetch": "^0.3.1",
-    "uglify-js": "^3.15.3",
-    "workbox-build": "^6.5.3"
+    "uglify-js": "^3.19.3",
+    "workbox-build": "^7.3.0"
   }
 }

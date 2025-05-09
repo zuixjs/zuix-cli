@@ -32,7 +32,7 @@ const mkdirp = require('mkdirp');
 const {isRemoteUrl, fetchAndCache, normalizeControllerCode} = require('../common/utils');
 
 // minifier
-const minify = require('html-minifier').minify;
+const minify = require('html-minifier-terser').minify;
 const UglifyJS = require('uglify-js');
 
 // JS DOM

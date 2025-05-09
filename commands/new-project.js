@@ -32,6 +32,8 @@ const merge = require('deepmerge');
 const chalk = require('chalk');
 const mkdirp = require('mkdirp');
 const {copyFolder} = require('../common/utils');
+const githubApiUserAgent = 'ZUIX-Project-Starter/1.1';
+const githubApiVersionAccept = 'application/vnd.github.v3+json';
 
 function newProject(projectName, templateName) {
   if (fs.existsSync(projectName)) {
@@ -43,28 +45,47 @@ function newProject(projectName, templateName) {
     return;
   }
   templateName = templateName.t || 'zuix-web-starter';
-  const releaseUrl = `https://api.github.com/repos/zuixjs/${templateName}/releases/latest`;
-  http.get({
+  const req = http.get({
     protocol: 'https:',
     hostname: 'api.github.com',
-    path: `/repos/zuixjs/${encodeURI(templateName)}/releases/latest`,
-    headers: { 'User-Agent': 'Mozilla/5.0' }
+    path: `/repos/zuixjs/${encodeURIComponent(templateName)}/releases/latest`,
+    headers: {
+      'User-Agent': githubApiUserAgent,
+      'Accept': githubApiVersionAccept
+    }
   }, function(response) {
+    if (response.statusCode !== 200) {
+      console.error(chalk.red.bold(`GitHub API Error (${response.statusCode}):`));
+      let errorBody = '';
+      response.on('data', chunk => errorBody += chunk);
+      response.on('end', () => {
+        console.error('Error Body:', errorBody);
+      });
+      return;
+    }
     let data = [];
     response.on('data', function (chunk) {
       data.push(chunk);
     });
     response.on('end', () => {
       const releaseInfo = JSON.parse(Buffer.concat(data).toString());
+      if (!releaseInfo.tag_name) {
+        console.error(chalk.red.bold('Error: tag_name not found in API response!'));
+        console.error('Release Info:', releaseInfo);
+        return;
+      }
       mkdirp.sync(projectName);
       console.debug('- %s "%s"', chalk.blue.bold('created folder'), projectName);
       downloadAndInstall({
         protocol: 'https:',
         hostname: 'codeload.github.com',
-        path: `/zuixjs/${encodeURI(templateName)}/zip/refs/tags/${releaseInfo.name}`,
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-      }, projectName, `${templateName}-${releaseInfo.name}`);
+        path: `/zuixjs/${encodeURIComponent(templateName)}/zip/refs/tags/${releaseInfo.tag_name}`,
+        headers: { 'User-Agent': githubApiUserAgent }
+      }, projectName, `${templateName}-${releaseInfo.tag_name}`);
     });
+  });
+  req.on('error', (e) => {
+    console.error('API Request Error:', e);
   });
 }
 

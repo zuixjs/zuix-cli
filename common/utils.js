@@ -85,6 +85,49 @@ function generateAppConfig(opts) {
     fs.writeFileSync(config.build.output+'/config.js', cfg);
 }
 
+/*
+
+// These are some common options, and not all are required.
+// Consult the docs for more info.
+generateSW({
+  dontCacheBustURLsMatching: [new RegExp('...')],
+  globDirectory: '...',
+  globPatterns: ['...', '...'],
+  maximumFileSizeToCacheInBytes: ...,
+  navigateFallback: '...',
+  runtimeCaching: [{
+    // Routing via a matchCallback function:
+    urlPattern: ({request, url}) => ...,
+    handler: '...',
+    options: {
+      cacheName: '...',
+      expiration: {
+        maxEntries: ...,
+      },
+    },
+  }, {
+    // Routing via a RegExp:
+    urlPattern: new RegExp('...'),
+    handler: '...',
+    options: {
+      cacheName: '...',
+      plugins: [..., ...],
+    },
+  }],
+  skipWaiting: ...,
+  swDest: '...',
+}).then(({count, size, warnings}) => {
+  if (warnings.length > 0) {
+    console.warn(
+      'Warnings encountered while generating a service worker:',
+      warnings.join('\n')
+    );
+  }
+
+  console.log(`Generated a service worker, which will precache ${count} files, totaling ${size} bytes.`);
+});
+ */
+
 function generateServiceWorker(opts) {
     let config = Object.assign(options, opts);
     config = JSON.parse(nunjucks.renderString(JSON.stringify(config), config));
