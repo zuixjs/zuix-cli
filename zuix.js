@@ -53,16 +53,15 @@ program
     .description('Starts the development server')
     .action(() => {
         console.log('Starting development server...');
-        const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-        const args = ['start'];
-        const child = spawn(command, args, {
+        const args = ['node_modules/@11ty/eleventy/cmd.cjs', '--serve', '--config=.eleventy.mjs'];
+        const child = spawn(process.execPath, args, {
             stdio: 'inherit',
-            shell: true
+            shell: false
         });
         const forwardSignal = (signal) => {
             if (child && !child.killed) {
                 try {
-                    process.kill(-child.pid, signal);
+                    process.kill(child.pid, signal);
                 } catch (e) {
                     try {
                         child.kill(signal);
@@ -73,32 +72,42 @@ program
             }
         };
         const sigintListener = () => {
-            console.log('\nSIGINT received, signaling child process...');
+            console.log('\nSIGINT received by zuix-cli, attempting to stop child process...');
             forwardSignal('SIGINT');
+            forwardSignal('SIGTERM');
         };
         const sigtermListener = () => {
-            console.log('\nSIGTERM received, signaling child process...');
+            console.log('\nSIGTERM received by zuix-cli, attempting to stop child process...');
             forwardSignal('SIGTERM');
+        };
+        const cleanupAndExit = (exitCode) => {
+            console.log(`CLI cleaning up listeners and exiting with code ${exitCode}.`);
+            process.removeAllListeners('SIGINT');
+            process.removeAllListeners('SIGTERM');
+            if (child) {
+                child.removeAllListeners('error');
+                child.removeAllListeners('exit');
+            }
+            process.exit(exitCode);
         };
         process.on('SIGINT', sigintListener);
         process.on('SIGTERM', sigtermListener);
         child.on('error', (error) => {
-            console.error(`Failed to start child process: ${error.message}`);
-            process.removeAllListeners('SIGINT');
-            process.removeAllListeners('SIGTERM');
-            process.exit(1);
+            cleanupAndExit(1);
         });
         child.on('exit', (code, signal) => {
+            const pid = child.pid;
             if (signal) {
-                console.log(`Development server exited due to signal: ${signal}`);
+                if (signal === 'SIGINT' || signal === 'SIGTERM') {
+                    code = 0;
+                }
+                console.log(`Development server (PID: ${pid}) exited due to signal: ${signal}`);
             } else if (code !== null) {
-                console.log(`Development server exited with code: ${code}`);
+                console.log(`Development server (PID: ${pid}) exited with code: ${code}`);
             } else {
-                console.log('Development server exited.');
+                console.log(`Development server (PID: ${pid}) exited.`);
             }
-            process.removeAllListeners('SIGINT');
-            process.removeAllListeners('SIGTERM');
-            process.exit(code === null ? 1 : code);
+            cleanupAndExit(code === null ? 1 : code);
         });
     });
 

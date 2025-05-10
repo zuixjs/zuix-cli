@@ -1,6 +1,6 @@
 {
   "name": "zuix",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "zUIx.js command line tool",
   "bin": {
     "zuix": "zuix.js"
