@@ -643,7 +643,7 @@ ${a.content}
   }
 }
 
-function compilePage(relativeFilePath, outputFile, opts) {
+async function compilePage(relativeFilePath, outputFile, opts) {
   if (compilePageEndTs - new Date().getTime() > 1000) {
     // auto-reset type-load cache
     loadTypeGuessCache = {};
@@ -702,8 +702,8 @@ function compilePage(relativeFilePath, outputFile, opts) {
       //tlog.overwrite();
     }
     if (options.build.minify != null && options.build.minify !== false && options.build.minify.disable !== true) {
-      tlog.overwrite(' * minify (n.a. in this zuix-cli build)');
-      //content = minify(content, options.build.minify);
+      tlog.overwrite(' * minify');
+      content = await minify(content, options.build.minify);
       tlog.overwrite(' \u2713 minify').br();
       //tlog.info();
     }

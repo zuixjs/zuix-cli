@@ -1,6 +1,6 @@
 {
   "name": "zuix",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "zUIx.js command line tool",
   "bin": {
     "zuix": "zuix.js"
@@ -31,7 +31,7 @@
     "json-stringify": "^1.0.0",
     "mkdirp": "^3.0.1",
     "ncp": "^2.0.0",
-    "nunjucks": "^3.2.3",
+    "nunjucks": "^3.2.4",
     "sync-fetch": "^0.3.1",
     "uglify-js": "^3.19.3",
     "workbox-build": "^7.3.0"
