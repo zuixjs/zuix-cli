@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 G-Labs. All Rights Reserved.
+ * Copyright 2020-2025 G-Labs. All Rights Reserved.
  *         https://zuixjs.github.io/zuix
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -702,8 +702,8 @@ function compilePage(relativeFilePath, outputFile, opts) {
       //tlog.overwrite();
     }
     if (options.build.minify != null && options.build.minify !== false && options.build.minify.disable !== true) {
-      tlog.overwrite(' * minify');
-      content = minify(content, options.build.minify);
+      tlog.overwrite(' * minify (n.a. in this zuix-cli build)');
+      //content = minify(content, options.build.minify);
       tlog.overwrite(' \u2713 minify').br();
       //tlog.info();
     }
