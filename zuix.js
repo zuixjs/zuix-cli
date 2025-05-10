@@ -29,7 +29,7 @@
 const {program, Argument} = require("commander");
 const pkg = require("./package.json");
 const newProject = require("./commands/new-project");
-const child_process = require("child_process");
+const { spawn } = require('child_process');
 const generate = require("./commands/generate");
 const compilePage = require("./commands/compile-page");
 const fs = require("fs");
@@ -52,9 +52,53 @@ program
     .command('start')
     .description('Starts the development server')
     .action(() => {
-        // todo: should check if it's a zuix.js project
-        child_process.execSync('npm start',{
-            stdio:[0, 1, 2]
+        console.log('Starting development server...');
+        const command = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        const args = ['start'];
+        const child = spawn(command, args, {
+            stdio: 'inherit',
+            shell: true
+        });
+        const forwardSignal = (signal) => {
+            if (child && !child.killed) {
+                try {
+                    process.kill(-child.pid, signal);
+                } catch (e) {
+                    try {
+                        child.kill(signal);
+                    } catch (e2) {
+                        // Error sending signal to child
+                    }
+                }
+            }
+        };
+        const sigintListener = () => {
+            console.log('\nSIGINT received, signaling child process...');
+            forwardSignal('SIGINT');
+        };
+        const sigtermListener = () => {
+            console.log('\nSIGTERM received, signaling child process...');
+            forwardSignal('SIGTERM');
+        };
+        process.on('SIGINT', sigintListener);
+        process.on('SIGTERM', sigtermListener);
+        child.on('error', (error) => {
+            console.error(`Failed to start child process: ${error.message}`);
+            process.removeAllListeners('SIGINT');
+            process.removeAllListeners('SIGTERM');
+            process.exit(1);
+        });
+        child.on('exit', (code, signal) => {
+            if (signal) {
+                console.log(`Development server exited due to signal: ${signal}`);
+            } else if (code !== null) {
+                console.log(`Development server exited with code: ${code}`);
+            } else {
+                console.log('Development server exited.');
+            }
+            process.removeAllListeners('SIGINT');
+            process.removeAllListeners('SIGTERM');
+            process.exit(code === null ? 1 : code);
         });
     });
 
